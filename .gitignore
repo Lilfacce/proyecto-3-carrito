@@ -1,0 +1,13 @@
+node_modules/
+dist/
+
+# Variables de entorno con secretos: nunca se suben
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/

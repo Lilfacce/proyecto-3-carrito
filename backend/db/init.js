@@ -1,0 +1,8 @@
+// Crea (o recrea) las tablas a partir de schema.sql.
+import { readFile } from 'node:fs/promises';
+import { pool } from '../src/db.js';
+
+const sql = await readFile(new URL('./schema.sql', import.meta.url), 'utf8');
+await pool.query(sql);
+console.log('Esquema creado.');
+await pool.end();
