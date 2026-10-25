@@ -20,4 +20,10 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '8h',
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 10),
   timezone: process.env.DB_TIMEZONE ?? 'America/Guatemala',
+  // Orígenes extra que pueden hacer POST/PUT/PATCH/DELETE (el del propio servidor siempre se acepta).
+  // En desarrollo se incluye el servidor de Vite.
+  origenesPermitidos: (process.env.ALLOWED_ORIGINS ?? (env === 'production' ? '' : 'http://localhost:5173'))
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
 };

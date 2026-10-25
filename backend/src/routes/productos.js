@@ -97,14 +97,18 @@ router.post('/', requireAdmin, async (req, res) => {
   res.status(201).json({ producto: rows[0] });
 });
 
+/**
+ * Edita los datos del producto. El stock NO se cambia aquí: si se escribiera el valor que el admin
+ * vio al abrir el formulario, se perderían las ventas hechas mientras tanto. Se ajusta con PATCH /:id/stock.
+ */
 router.put('/:id', requireAdmin, async (req, res) => {
   const id = idSchema.parse(req.params.id);
-  const p = productoSchema.parse(req.body);
+  const p = productoSchema.omit({ stock: true }).parse(req.body);
   const { rows } = await query(
-    `UPDATE productos SET nombre = $1, descripcion = $2, precio = $3, stock = $4, stock_minimo = $5,
-       imagen = $6, categoria = $7, activo = $8, actualizado_en = NOW()
-     WHERE id = $9 RETURNING *`,
-    [p.nombre, p.descripcion, p.precio, p.stock, p.stock_minimo, p.imagen, p.categoria, p.activo, id],
+    `UPDATE productos SET nombre = $1, descripcion = $2, precio = $3, stock_minimo = $4,
+       imagen = $5, categoria = $6, activo = $7, actualizado_en = NOW()
+     WHERE id = $8 RETURNING *`,
+    [p.nombre, p.descripcion, p.precio, p.stock_minimo, p.imagen, p.categoria, p.activo, id],
   );
   if (!rows[0]) throw new HttpError(404, 'Producto no encontrado');
   res.json({ producto: rows[0] });

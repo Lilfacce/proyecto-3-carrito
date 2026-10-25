@@ -7,6 +7,12 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@tienda.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'Admin123!';
 const CLIENTE_PASSWORD = 'Cliente123!';
 
+// Las cuentas de demostración tienen contraseñas públicas (están en el README): nunca en producción.
+if (config.isProd) {
+  console.error('db:seed crea cuentas con contraseñas de demostración. No se ejecuta con NODE_ENV=production.');
+  process.exit(1);
+}
+
 const productos = [
   ['Audífonos inalámbricos Pulse', 'Bluetooth 5.3, cancelación de ruido y 30 h de batería.', 349.0, 25, 'Audio'],
   ['Bocina portátil Wave', 'Resistente al agua IPX7, sonido 360° y 12 h de reproducción.', 279.0, 18, 'Audio'],

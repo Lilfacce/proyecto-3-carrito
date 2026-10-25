@@ -4,7 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { config } from '../config.js';
 import { query } from '../db.js';
-import { COOKIE_NAME, cookieOptions, firmarToken, requireAuth } from '../middleware/auth.js';
+import { COOKIE_NAME, iniciarSesion, requireAuth } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
 
 const router = Router();
@@ -69,7 +69,7 @@ router.post('/registro', authLimiter, async (req, res) => {
       [datos.nombre, datos.email, hash, datos.telefono ?? null, datos.direccion ?? null],
     );
     const usuario = rows[0];
-    res.cookie(COOKIE_NAME, firmarToken(usuario), cookieOptions);
+    iniciarSesion(res, usuario);
     res.status(201).json({ usuario: publico(usuario) });
   } catch (err) {
     if (err.code === '23505') throw new HttpError(409, 'Ya existe una cuenta con ese correo');
@@ -86,7 +86,7 @@ router.post('/login', authLimiter, async (req, res) => {
   if (!ok) throw new HttpError(401, 'Correo o contraseña incorrectos');
   if (!usuario.activo) throw new HttpError(403, 'Tu cuenta está desactivada. Contacta al administrador.');
 
-  res.cookie(COOKIE_NAME, firmarToken(usuario), cookieOptions);
+  iniciarSesion(res, usuario);
   res.json({ usuario: publico(usuario) });
 });
 

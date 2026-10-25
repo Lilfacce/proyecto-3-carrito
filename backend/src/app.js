@@ -9,6 +9,7 @@ import carritoRoutes from './routes/carrito.js';
 import pedidosRoutes from './routes/pedidos.js';
 import adminRoutes from './routes/admin.js';
 import { errorHandler, notFound } from './middleware/errors.js';
+import { verificarOrigen } from './middleware/auth.js';
 
 export function crearApp() {
   const app = express();
@@ -23,6 +24,8 @@ export function crearApp() {
   );
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
+
+  app.use('/api', verificarOrigen);
 
   app.get('/api/salud', (req, res) => res.json({ ok: true }));
   app.use('/api/auth', authRoutes);

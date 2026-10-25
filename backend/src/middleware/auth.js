@@ -9,7 +9,6 @@ export const cookieOptions = {
   httpOnly: true, // JavaScript del navegador no puede leer el token (mitiga XSS)
   sameSite: 'lax', // el navegador no lo envía en peticiones cross-site (mitiga CSRF)
   secure: config.isProd,
-  maxAge: 8 * 60 * 60 * 1000,
   path: '/',
 };
 
@@ -17,6 +16,26 @@ export function firmarToken(usuario) {
   return jwt.sign({ sub: usuario.id, rol: usuario.rol }, config.jwtSecret, {
     expiresIn: config.jwtExpiresIn,
   });
+}
+
+/** Firma el token y lo guarda en la cookie. La cookie vence junto con el token (JWT_EXPIRES_IN). */
+export function iniciarSesion(res, usuario) {
+  const token = firmarToken(usuario);
+  const { iat, exp } = jwt.decode(token);
+  res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: (exp - iat) * 1000 });
+}
+
+/**
+ * Defensa adicional contra CSRF: rechaza peticiones que modifican datos (POST, PUT, PATCH, DELETE)
+ * cuando el navegador indica un Origin distinto al del propio servidor o a los permitidos.
+ */
+export function verificarOrigen(req, res, next) {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origen = req.get('origin');
+  if (!origen) return next(); // clientes que no son navegadores (curl, pruebas) no envían Origin
+  const propio = `${req.protocol}://${req.get('host')}`;
+  if (origen === propio || config.origenesPermitidos.includes(origen)) return next();
+  throw new HttpError(403, 'Origen de la petición no permitido');
 }
 
 /** Exige sesión válida. Consulta la BD para que desactivar un usuario tenga efecto inmediato. */

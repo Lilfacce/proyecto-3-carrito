@@ -8,6 +8,7 @@ import { formatoQ } from '../../format.js'
 const VACIO = { nombre: '', descripcion: '', precio: '', stock: '', stock_minimo: 5, categoria: '', imagen: '', activo: true }
 
 function FormProducto({ inicial, categorias, onGuardar, onCancelar }) {
+  const nuevo = inicial.id === undefined
   const [form, setForm] = useState(inicial)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -55,8 +56,15 @@ function FormProducto({ inicial, categorias, onGuardar, onCancelar }) {
           </datalist>
         </div>
         <div>
-          <label className="label" htmlFor="stock">Stock</label>
-          <input id="stock" type="number" min="0" step="1" className="input" required {...campo('stock')} />
+          <label className="label" htmlFor="stock">{nuevo ? 'Stock inicial' : 'Stock'}</label>
+          {nuevo ? (
+            <input id="stock" type="number" min="0" step="1" className="input" required {...campo('stock')} />
+          ) : (
+            <>
+              <input id="stock" className="input bg-slate-50" value={form.stock} readOnly aria-describedby="stock-ayuda" />
+              <p id="stock-ayuda" className="mt-1 text-xs text-slate-500">Se ajusta desde Inventario.</p>
+            </>
+          )}
         </div>
         <div>
           <label className="label" htmlFor="stock_minimo">Stock mínimo</label>

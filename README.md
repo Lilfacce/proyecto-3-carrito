@@ -16,8 +16,15 @@ y **panel de administración** (resumen, productos, inventario, pedidos y usuari
 
 ## Requisitos
 
-- Node.js 20 o superior
-- PostgreSQL 14 o superior
+- Node.js **20.19+ o 22.12+** (lo exige Vite 8; probado con Node 24.13)
+- PostgreSQL 14 o superior (probado con PostgreSQL 18)
+
+## Documentación
+
+- [Manual técnico](docs/MANUAL_TECNICO.md) — arquitectura, instalación, base de datos, API, seguridad y pruebas
+- [Manual de usuario](docs/MANUAL_USUARIO.md) — guía paso a paso para clientes y administradores
+- [Plan y resultados de pruebas](docs/PRUEBAS.md) — casos con resultado esperado y obtenido
+- [Guion de la demostración](docs/GUION_DEMO.md)
 
 ## Instalación
 
@@ -30,12 +37,15 @@ cd backend
 npm install
 cp .env.example .env      # en Windows: copy .env.example .env
 # Edita .env: DATABASE_URL, TEST_DATABASE_URL y JWT_SECRET
-npm run db:reset          # crea las tablas y carga datos de ejemplo
+npm run db:reset          # ⚠ BORRA y recrea las tablas, luego carga datos de ejemplo
 
 # 3. Frontend
 cd ../frontend
 npm install
 ```
+
+> ⚠ `npm run db:reset` (y `db:init`) es **destructivo**: elimina todas las tablas de `DATABASE_URL`.
+> Úsalo solo con la base de desarrollo. Se niega a ejecutarse con `NODE_ENV=production`.
 
 ## Ejecutar en desarrollo
 
@@ -61,6 +71,10 @@ cd ../backend && npm start    # App y API en http://localhost:3000
 | Cliente | `ana@correo.com` | `Cliente123!` |
 | Cliente | `carlos@correo.com` | `Cliente123!` |
 
+> Estas contraseñas son **públicas y solo para la demostración local**. `db:seed` se niega a correr con
+> `NODE_ENV=production`; antes de cualquier despliegue real crea el administrador con una contraseña propia
+> y cambia `JWT_SECRET`.
+
 Tarjetas de prueba (pago simulado, cualquier fecha futura y CVV):
 
 - `4242 4242 4242 4242` → aprobada
@@ -72,11 +86,15 @@ Tarjetas de prueba (pago simulado, cualquier fecha futura y CVV):
 cd backend && npm test
 ```
 
-Cubren registro/login, permisos por rol, carrito, validación de stock, precio tomado del servidor,
+40 pruebas automatizadas. Cubren registro/login, permisos por rol en **todas** las rutas de administración,
+carrito y validación de cantidades, precio tomado del servidor (aunque el navegador envíe otro),
 pago rechazado sin efectos, **dos compras simultáneas del último producto** (solo una gana),
-transiciones de estado de pedidos, cancelación con devolución de stock y desactivación de usuarios.
+edición y desactivación de productos, inventario, transiciones de estado de pedidos, cancelación con
+devolución de stock, gestión de usuarios y roles, sesión expirada o falsificada, pedidos ajenos,
+protección CSRF por origen e intentos de inyección SQL. El detalle está en [docs/PRUEBAS.md](docs/PRUEBAS.md).
 
-> `npm test` borra y recrea la base `TEST_DATABASE_URL`. No apuntes esa variable a la base real.
+> `npm test` borra y recrea la base `TEST_DATABASE_URL`. No apuntes esa variable a la base real
+> (las pruebas se niegan a correr si es igual a `DATABASE_URL`).
 
 ## Estructura
 
@@ -128,6 +146,8 @@ proyecto-3/
 - **El precio lo pone el servidor**: el total se calcula con los precios de la base de datos; el navegador solo envía ids y cantidades.
 - **Tarjetas**: nunca se guarda el número completo ni el CVV, solo marca y últimos 4 dígitos.
 - **Contraseñas** con bcrypt; los mensajes de login no revelan si un correo existe.
-- **Sesión** en cookie `httpOnly` + `SameSite=Lax` (mitiga XSS y CSRF); límite de intentos en login/registro.
+- **Sesión** en cookie `httpOnly` + `SameSite=Lax` que vence junto con el JWT (`JWT_EXPIRES_IN`); límite de intentos en login/registro.
+- **CSRF**: además de `SameSite`, las escrituras con un `Origin` ajeno se rechazan (403).
+- **Inventario sin pérdidas**: editar un producto no sobrescribe su stock; el stock solo cambia con ajustes atómicos, compras y cancelaciones.
 - **Usuarios desactivados** pierden el acceso de inmediato (se verifica en cada petición).
 - Los productos eliminados se **desactivan** para conservar el historial de pedidos.
