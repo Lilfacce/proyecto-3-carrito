@@ -10,7 +10,9 @@ export function ToastProvider({ children }) {
   const notificar = useCallback((mensaje, tipo = 'exito') => {
     const id = ++contador
     setToasts((t) => [...t, { id, mensaje, tipo }])
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500)
+    // Primero se marca como saliente (baja y se desvanece) y después se quita del DOM.
+    setTimeout(() => setToasts((t) => t.map((x) => (x.id === id ? { ...x, saliendo: true } : x))), 3300)
+    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3550)
   }, [])
 
   return (
@@ -24,8 +26,10 @@ export function ToastProvider({ children }) {
           <div
             key={t.id}
             role="status"
-            className={`w-full max-w-sm rounded-lg px-4 py-3 text-sm font-medium text-white shadow-lg ${
-              t.tipo === 'error' ? 'bg-red-600' : 'bg-slate-900'
+            className={`w-full max-w-sm rounded-full px-5 py-3 text-sm text-white shadow-flotante ring-1 ring-white/20
+              transition-[opacity,translate] duration-[250ms] ease-(--ease-out) starting:translate-y-3 starting:opacity-0
+              motion-reduce:translate-y-0 ${t.saliendo ? 'translate-y-3 opacity-0' : ''} ${
+              t.tipo === 'error' ? 'bg-red-600' : 'bg-tinta'
             }`}
           >
             {t.mensaje}

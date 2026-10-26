@@ -13,6 +13,7 @@
     "dev": "node --watch src/server.js",
     "db:init": "node db/init.js",
     "db:seed": "node db/seed.js",
+    "db:migrar": "node db/migrar.js",
     "db:reset": "node db/init.js && node db/seed.js",
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\""
   },

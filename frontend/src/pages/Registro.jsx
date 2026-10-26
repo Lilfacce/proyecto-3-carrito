@@ -4,24 +4,7 @@ import { Alerta } from '../components/ui.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import { TarjetaFormulario } from './Login.jsx'
-
-export const reglasPassword = (p) => [
-  { ok: p.length >= 8, texto: 'Al menos 8 caracteres' },
-  { ok: /[A-Za-z]/.test(p), texto: 'Al menos una letra' },
-  { ok: /\d/.test(p), texto: 'Al menos un número' },
-]
-
-export function ReglasPassword({ password }) {
-  return (
-    <ul className="mt-2 space-y-0.5 text-xs">
-      {reglasPassword(password).map((r) => (
-        <li key={r.texto} className={r.ok ? 'text-emerald-600' : 'text-slate-400'}>
-          {r.ok ? '✓' : '○'} {r.texto}
-        </li>
-      ))}
-    </ul>
-  )
-}
+import ReglasPassword, { cumpleReglas } from '../components/ReglasPassword.jsx'
 
 export default function Registro() {
   const { registro } = useAuth()
@@ -33,7 +16,7 @@ export default function Registro() {
   const [enviando, setEnviando] = useState(false)
 
   const campo = (k) => ({ value: form[k], onChange: (e) => setForm({ ...form, [k]: e.target.value }) })
-  const passwordValida = reglasPassword(form.password).every((r) => r.ok)
+  const passwordValida = cumpleReglas(form.password)
 
   const enviar = async (e) => {
     e.preventDefault()
@@ -66,11 +49,11 @@ export default function Registro() {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="label" htmlFor="telefono">Teléfono <span className="text-slate-400">(opcional)</span></label>
+            <label className="label" htmlFor="telefono">Teléfono <span className="text-gris">(opcional)</span></label>
             <input id="telefono" type="tel" className="input" autoComplete="tel" {...campo('telefono')} />
           </div>
           <div>
-            <label className="label" htmlFor="direccion">Dirección <span className="text-slate-400">(opcional)</span></label>
+            <label className="label" htmlFor="direccion">Dirección <span className="text-gris">(opcional)</span></label>
             <input id="direccion" className="input" autoComplete="street-address" {...campo('direccion')} />
           </div>
         </div>
@@ -86,9 +69,9 @@ export default function Registro() {
         <button className="btn-primario w-full py-2.5" disabled={enviando || !passwordValida}>
           {enviando ? 'Creando cuenta…' : 'Crear cuenta'}
         </button>
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-sm text-gris">
           ¿Ya tienes cuenta?{' '}
-          <Link to="/login" state={location.state} className="font-semibold text-marca-600 hover:underline">
+          <Link to="/login" state={location.state} className="font-medium text-tinta underline underline-offset-2">
             Inicia sesión
           </Link>
         </p>

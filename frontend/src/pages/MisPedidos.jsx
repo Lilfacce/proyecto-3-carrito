@@ -17,14 +17,14 @@ export default function MisPedidos() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Mis pedidos</h1>
+      <h1 className="text-3xl font-semibold tracking-[-0.05em]">Mis pedidos</h1>
       {pedidos.length === 0 ? (
         <Vacio titulo="Aún no tienes pedidos" accion={<Link to="/" className="btn-primario">Ir a comprar</Link>} />
       ) : (
         <ul className="space-y-3">
           {pedidos.map((p) => (
             <li key={p.id}>
-              <Link to={`/mis-pedidos/${p.id}`} className="tarjeta flex flex-wrap items-center justify-between gap-3 p-4 transition hover:border-marca-500">
+              <Link to={`/mis-pedidos/${p.id}`} className="tarjeta flex flex-wrap items-center justify-between gap-3 p-4 transition hover:-translate-y-0.5 hover:shadow-flotante">
                 <div>
                   <p className="font-semibold">Pedido #{p.id}</p>
                   <p className="text-sm text-slate-500">
@@ -33,7 +33,7 @@ export default function MisPedidos() {
                 </div>
                 <div className="flex items-center gap-4">
                   <EstadoBadge estado={p.estado} />
-                  <span className="font-bold">{formatoQ(p.total)}</span>
+                  <span className="font-semibold">{formatoQ(p.total)}</span>
                 </div>
               </Link>
             </li>

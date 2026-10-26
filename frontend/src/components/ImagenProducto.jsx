@@ -1,22 +1,10 @@
 import { useState } from 'react'
-
-const ICONOS = {
-  Audio: '🎧',
-  Computación: '💻',
-  Almacenamiento: '💾',
-  Accesorios: '🔌',
-  Wearables: '⌚',
-}
-const FONDOS = [
-  'from-sky-100 to-indigo-200',
-  'from-emerald-100 to-teal-200',
-  'from-amber-100 to-orange-200',
-  'from-rose-100 to-pink-200',
-  'from-violet-100 to-purple-200',
-]
+import { IconoCategoria } from './Iconos.jsx'
 
 /** Muestra la imagen del producto o, si no tiene, un marcador con el ícono de su categoría. */
-export default function ImagenProducto({ producto, className = '' }) {
+export default function ImagenProducto({ producto, className = '', nombreTransicion }) {
+  // Con nombre de transición, la imagen "viaja" entre páginas (View Transitions API).
+  const estilo = nombreTransicion ? { viewTransitionName: nombreTransicion } : undefined
   const [fallo, setFallo] = useState(false)
   if (producto.imagen && !fallo) {
     return (
@@ -25,14 +13,14 @@ export default function ImagenProducto({ producto, className = '' }) {
         alt={producto.nombre}
         loading="lazy"
         onError={() => setFallo(true)}
-        className={`object-cover ${className}`}
+        style={estilo}
+        className={`bg-canvas object-cover ${className}`}
       />
     )
   }
-  const fondo = FONDOS[producto.id % FONDOS.length] ?? FONDOS[0]
   return (
-    <div className={`flex items-center justify-center bg-gradient-to-br ${fondo} ${className}`} aria-hidden="true">
-      <span className="text-5xl">{ICONOS[producto.categoria] ?? '📦'}</span>
+    <div className={`@container flex items-center justify-center bg-canvas text-slate-400 ${className}`} style={estilo} aria-hidden="true">
+      <IconoCategoria categoria={producto.categoria} className="h-[34cqw] max-h-28 w-[34cqw] max-w-28 min-w-5 min-h-5" grosor={1.2} />
     </div>
   )
 }

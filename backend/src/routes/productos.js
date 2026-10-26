@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query } from '../db.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
+import { RUTA_IMAGEN } from './imagenes.js';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ const productoSchema = z.object({
   stock: z.coerce.number().int().min(0),
   stock_minimo: z.coerce.number().int().min(0).default(5),
   imagen: z
-    .union([z.url({ protocol: /^https?$/ }), z.literal('')])
+    .union([z.url({ protocol: /^https?$/ }), z.string().regex(RUTA_IMAGEN), z.literal('')])
     .optional()
     .nullable()
     .transform((v) => v || null),
@@ -27,6 +28,9 @@ const listaSchema = z.object({
   q: z.string().trim().max(100).optional(),
   categoria: z.string().trim().max(60).optional(),
   orden: z.enum(['nombre', 'precio_asc', 'precio_desc', 'recientes']).default('nombre'),
+  // Paginación opcional: sin `limite` se devuelve todo el catálogo (compatibilidad).
+  limite: z.coerce.number().int().min(1).max(48).optional(),
+  pagina: z.coerce.number().int().min(1).default(1),
 });
 
 const ORDEN_SQL = {
@@ -41,7 +45,7 @@ const CAMPOS_PUBLICOS = 'id, nombre, descripcion, precio, stock, imagen, categor
 // ---- Catálogo público ----
 
 router.get('/', async (req, res) => {
-  const { q, categoria, orden } = listaSchema.parse(req.query);
+  const { q, categoria, orden, limite, pagina } = listaSchema.parse(req.query);
   const condiciones = ['activo = TRUE'];
   const params = [];
   if (q) {
@@ -52,13 +56,20 @@ router.get('/', async (req, res) => {
     params.push(categoria);
     condiciones.push(`categoria = $${params.length}`);
   }
-  const { rows } = await query(
-    `SELECT ${CAMPOS_PUBLICOS} FROM productos
-     WHERE ${condiciones.join(' AND ')}
-     ORDER BY ${ORDEN_SQL[orden]}`,
-    params,
-  );
-  res.json({ productos: rows });
+  const where = condiciones.join(' AND ');
+  // "id" desempata el orden para que las páginas no repitan ni salten productos.
+  let sql = `SELECT ${CAMPOS_PUBLICOS} FROM productos WHERE ${where} ORDER BY ${ORDEN_SQL[orden]}, id`;
+  const paramsPagina = [...params];
+  if (limite) {
+    paramsPagina.push(limite, (pagina - 1) * limite);
+    sql += ` LIMIT $${paramsPagina.length - 1} OFFSET $${paramsPagina.length}`;
+  }
+  const [{ rows }, conteo] = await Promise.all([
+    query(sql, paramsPagina),
+    query(`SELECT COUNT(*)::int AS total FROM productos WHERE ${where}`, params),
+  ]);
+  const total = conteo.rows[0].total;
+  res.json({ productos: rows, total, pagina, paginas: limite ? Math.max(1, Math.ceil(total / limite)) : 1 });
 });
 
 router.get('/categorias', async (req, res) => {

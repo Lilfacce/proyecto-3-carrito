@@ -7,6 +7,9 @@ dist/
 !.env.example
 
 *.log
+
+# Fotos subidas desde el panel de administración (datos locales, no código)
+backend/uploads/
 .DS_Store
 .vscode/*
 !.vscode/extensions.json

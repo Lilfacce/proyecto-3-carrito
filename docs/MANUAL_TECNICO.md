@@ -92,24 +92,29 @@ proyecto-3/
 │   ├── db/
 │   │   ├── schema.sql      definición de tablas (DESTRUCTIVO: borra y recrea)
 │   │   ├── init.js         ejecuta schema.sql
+│   │   ├── migraciones.sql cambios para bases existentes (no borra datos)
+│   │   ├── migrar.js       ejecuta migraciones.sql
 │   │   └── seed.js         datos de ejemplo
+│   ├── uploads/            fotos de productos subidas desde el panel (ignorada por Git)
 │   ├── src/
 │   │   ├── server.js       arranque del servidor
 │   │   ├── app.js          middlewares globales y rutas
 │   │   ├── config.js       lectura y validación de variables de entorno
 │   │   ├── db.js           pool de conexiones y withTransaction()
 │   │   ├── pago.js         pasarela simulada (Luhn, vencimiento, marca)
+│   │   ├── correo.js       correo simulado: imprime el mensaje en la consola
 │   │   ├── middleware/
 │   │   │   ├── auth.js     sesión JWT, roles, verificación de origen (CSRF)
 │   │   │   └── errors.js   HttpError y manejador central de errores
-│   │   └── routes/         auth, productos, carrito, pedidos, admin
+│   │   └── routes/         auth, productos, carrito, pedidos, admin, imagenes
 │   └── tests/              api.test.js (integración), pago.test.js (unitarias)
 ├── frontend/
 │   └── src/
 │       ├── api.js          cliente HTTP
 │       ├── context/        AuthContext, CartContext, ToastContext
-│       ├── components/     Layout, rutas protegidas, UI común
-│       └── pages/          vistas del cliente y admin/
+│       ├── components/     Layout, rutas protegidas, UI común, íconos, SelectorImagen, LimiteError
+│       ├── pages/          vistas del cliente y admin/
+│       └── test/           pruebas de la interfaz (Vitest + Testing Library)
 └── docs/                   manuales, pruebas y guion de demostración
 ```
 
@@ -143,6 +148,11 @@ Decisiones de diseño:
   el precio de un producto no altera pedidos ya hechos.
 - **Restricciones en la base de datos**: aunque la API valida, los `CHECK` impiden stock negativo o
   estados inválidos incluso ante un error de programación.
+
+**Recuperación de contraseña.** `recuperaciones_password` guarda, por cada enlace pedido, el usuario, el
+**hash SHA-256** del token (nunca el token), la fecha de vencimiento (30 min) y cuándo se usó. Pedir un
+enlace nuevo marca como usados los anteriores. `usuarios.password_cambiado_en` registra el último cambio
+de contraseña: los JWT emitidos antes de ese momento se rechazan, lo que cierra las sesiones abiertas.
 
 ### 2.5 Estados de un pedido
 
@@ -197,6 +207,7 @@ npm install
 | `TEST_DATABASE_URL` | Para pruebas | `postgres://…/tienda_test` | Base que `npm test` **borra y recrea** |
 | `ALLOWED_ORIGINS` | No | `http://localhost:5173` en desarrollo | Orígenes extra autorizados a hacer escrituras |
 | `DB_TIMEZONE` | No | `America/Guatemala` | Zona horaria de los reportes por día |
+| `PUBLIC_URL` | No | `http://localhost:5173` | Dirección del frontend usada en los enlaces de los correos (no se toma del encabezado `Host`) |
 
 Generar un `JWT_SECRET`:
 
@@ -231,7 +242,9 @@ cd ../backend && npm start    # App y API en http://localhost:3000
 | `npm run db:init` | backend | ⚠ Borra y recrea las tablas |
 | `npm run db:seed` | backend | Carga datos de ejemplo (no duplica productos) |
 | `npm run db:reset` | backend | ⚠ `db:init` + `db:seed` |
-| `npm test` | backend | Ejecuta las 40 pruebas automatizadas |
+| `npm run db:migrar` | backend | Aplica `migraciones.sql` a una base existente **sin borrar datos** |
+| `npm test` | backend | Ejecuta las 50 pruebas de la API |
+| `npm test` | frontend | Ejecuta las 25 pruebas de la interfaz (Vitest, sin navegador ni backend) |
 
 > **Advertencia:** `db:init` y `db:reset` eliminan todos los datos de `DATABASE_URL`. Úsalos solo
 > contra la base de desarrollo. Ambos (y `db:seed`) se niegan a correr con `NODE_ENV=production`.
@@ -251,13 +264,16 @@ Todas las respuestas son JSON. Los errores tienen la forma `{ "error": "mensaje"
 | POST | `/api/auth/login` | público | Inicia sesión |
 | POST | `/api/auth/logout` | público | Cierra sesión (borra la cookie) |
 | GET / PUT | `/api/auth/me` | sesión | Ver / editar perfil (nombre, teléfono, dirección) |
-| PUT | `/api/auth/me/password` | sesión | Cambiar contraseña (pide la actual) |
-| GET | `/api/productos?q=&categoria=&orden=` | público | Catálogo (`orden`: nombre, precio_asc, precio_desc, recientes) |
+| PUT | `/api/auth/me/password` | sesión | Cambiar contraseña (pide la actual). Cierra las demás sesiones y renueva la actual |
+| POST | `/api/auth/recuperar` | público | Envía (simulado) un enlace para restablecer. Responde igual exista o no la cuenta |
+| POST | `/api/auth/restablecer` | público | `{ token, password }`: cambia la contraseña con un enlace vigente y no usado |
+| GET | `/api/productos?q=&categoria=&orden=&limite=&pagina=` | público | Catálogo (`orden`: nombre, precio_asc, precio_desc, recientes). Con `limite` (1–48) pagina y devuelve `total` y `paginas`; sin él devuelve todo |
 | GET | `/api/productos/categorias` | público | Categorías con productos activos |
 | GET | `/api/productos/:id` | público | Detalle de un producto activo |
 | GET | `/api/productos/admin/todos` | admin | Todos los productos, incluidos inactivos, con `stock_bajo` |
 | POST | `/api/productos` | admin | Crear producto |
 | PUT | `/api/productos/:id` | admin | Editar datos (no modifica el stock) |
+| POST | `/api/admin/imagenes` | admin | Cuerpo binario `image/png`, `image/jpeg` o `image/webp` (máx. 2 MB). Devuelve `{ url: "/uploads/…" }` |
 | PATCH | `/api/productos/:id/stock` | admin | Ajuste de inventario `{ "ajuste": +n / -n }` |
 | DELETE | `/api/productos/:id` | admin | Desactivar producto |
 | GET | `/api/carrito` | sesión | Carrito con precios actuales |
@@ -330,24 +346,36 @@ El pago **contra entrega** se registra como `pendiente` y pasa a `aprobado` cuan
 - `CartContext` mantiene el carrito sincronizado con el servidor; el contador del encabezado se actualiza al agregar.
 - `Rutas.jsx` protege las páginas: las de cliente exigen sesión y las de `/admin` exigen rol administrador.
   Esta protección es solo de interfaz; la seguridad real la aplica la API.
-- Las tablas del panel tienen desplazamiento horizontal propio en pantallas pequeñas y el menú lateral se
-  convierte en pestañas desplazables en móvil.
+- En pantallas de menos de 640 px las tablas del panel se muestran como tarjetas (clase `tabla-movil`:
+  cada celda lleva su encabezado en `data-etiqueta`) y el menú lateral se convierte en pestañas.
+  Las listas largas del panel se muestran de 15 en 15 (`usePorPartes`); el catálogo pide páginas de 12 a la API.
+- `LimiteError` atrapa errores de renderizado y muestra “Algo salió mal” en lugar de una pantalla en blanco.
+- Los modales mueven el foco al abrirse, lo devuelven al cerrarse, atrapan Tab y, si hay dos abiertos,
+  Escape cierra solo el de arriba.
+- **Diseño y movimiento.** Los tokens visuales están en `src/index.css` (ver `frontend/DESIGN.md`).
+  Las animaciones tienen un propósito concreto: punto del logotipo (una vez por visita), tarjetas
+  flotantes del hero, aparición escalonada del catálogo, skeletons de carga, confirmación del botón
+  **+** y del ícono del carrito, check que se dibuja al terminar la compra, entrada de modales y avisos,
+  y transición de la imagen de la tarjeta a la página del producto (View Transitions API). Con
+  “reducir movimiento” activado en el sistema se eliminan los desplazamientos y quedan solo fundidos.
 
 ---
 
 ## 5. Pruebas
 
 ```bash
-cd backend
-npm test
+cd backend && npm test     # API
+cd frontend && npm test    # interfaz
 ```
 
+- `frontend/src/test/*.test.js(x)`: pruebas de la interfaz con Vitest + Testing Library en jsdom. La API
+  se simula, así que no necesitan backend ni base de datos.
 - `tests/pago.test.js`: pruebas unitarias de la pasarela simulada.
 - `tests/api.test.js`: pruebas de integración que levantan la app en memoria y la ejercitan con Supertest
   contra una base PostgreSQL real (`TEST_DATABASE_URL`). La base se **borra y recrea** en cada corrida; las
   pruebas se niegan a correr si `TEST_DATABASE_URL` es igual a `DATABASE_URL`.
 
-Resultado actual: **40 pruebas, 40 aprobadas**. El detalle de cada caso, con resultado esperado y obtenido,
+Resultado actual: **backend 50 de 50 aprobadas; frontend 25 de 25 aprobadas**. El detalle de cada caso, con resultado esperado y obtenido,
 está en [PRUEBAS.md](PRUEBAS.md).
 
 ---
@@ -357,7 +385,10 @@ está en [PRUEBAS.md](PRUEBAS.md).
 | Amenaza | Control implementado | Archivo |
 |---|---|---|
 | Robo de contraseñas | Hash bcrypt; política mínima (8+ caracteres, letra y número); el hash nunca sale de la API | `routes/auth.js`, `routes/admin.js` |
-| Enumeración de cuentas | Mismo mensaje si el correo no existe o la contraseña es incorrecta | `routes/auth.js` |
+| Enumeración de cuentas | Mismo mensaje si el correo no existe o la contraseña es incorrecta; `/recuperar` responde igual exista o no la cuenta | `routes/auth.js` |
+| Robo de enlaces de recuperación | Token aleatorio de 256 bits, solo se guarda su hash, vence en 30 min, un solo uso, un enlace nuevo anula los anteriores; el enlace usa `PUBLIC_URL` y no el encabezado `Host` | `routes/auth.js` |
+| Sesiones tras cambiar la contraseña | Los JWT emitidos antes de `password_cambiado_en` se rechazan | `middleware/auth.js` |
+| Archivos maliciosos | El tipo de imagen se comprueba por su firma binaria; nombre aleatorio; 2 MB máx.; se sirven con `nosniff`; la ruta guardada en el producto debe coincidir con `/uploads/<hex>.<ext>` | `routes/imagenes.js`, `routes/productos.js` |
 | Fuerza bruta | Máximo 20 intentos de login/registro cada 15 min por IP | `routes/auth.js` |
 | Robo de sesión por XSS | JWT en cookie `httpOnly` (JavaScript no la puede leer); React escapa el contenido; Helmet con CSP | `middleware/auth.js`, `app.js` |
 | CSRF | Cookie `SameSite=Lax` **y** rechazo (403) de escrituras con un `Origin` ajeno | `middleware/auth.js` |
@@ -398,3 +429,6 @@ contraseñas públicas documentadas en el README. Son **solo para el entorno loc
 | Error al instalar/compilar Vite | Node.js antiguo | Actualizar a Node 20.19+ o 22.12+ |
 | “Demasiados intentos” | Límite de login alcanzado | Esperar 15 minutos o reiniciar el servidor |
 | “Origen de la petición no permitido” | El frontend corre en un origen no autorizado | Agregarlo a `ALLOWED_ORIGINS` |
+| `relation "recuperaciones_password" does not exist` | La base se creó con una versión anterior | `npm run db:migrar` (no borra datos) |
+| “No pudimos conectar con el servidor” | El backend está apagado o reiniciándose | Iniciar `npm run dev` en `backend` |
+| No llega el correo de recuperación | El correo es simulado | Buscar el enlace en la consola del backend |

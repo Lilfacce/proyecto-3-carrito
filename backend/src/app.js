@@ -8,6 +8,7 @@ import productosRoutes from './routes/productos.js';
 import carritoRoutes from './routes/carrito.js';
 import pedidosRoutes from './routes/pedidos.js';
 import adminRoutes from './routes/admin.js';
+import imagenesRoutes, { CARPETA_IMAGENES } from './routes/imagenes.js';
 import { errorHandler, notFound } from './middleware/errors.js';
 import { verificarOrigen } from './middleware/auth.js';
 
@@ -32,8 +33,12 @@ export function crearApp() {
   app.use('/api/productos', productosRoutes);
   app.use('/api/carrito', carritoRoutes);
   app.use('/api/pedidos', pedidosRoutes);
+  app.use('/api/admin/imagenes', imagenesRoutes);
   app.use('/api/admin', adminRoutes);
   app.use('/api', notFound);
+
+  // Fotos de productos subidas desde el panel. nosniff (helmet) evita que se interpreten como otro tipo.
+  app.use('/uploads', express.static(CARPETA_IMAGENES, { maxAge: '30d', immutable: true, index: false }));
 
   // En producción el mismo servidor entrega el frontend compilado (frontend/dist).
   const dist = fileURLToPath(new URL('../../frontend/dist', import.meta.url));

@@ -12,14 +12,18 @@ botón ☰ de la esquina superior derecha.
 
 ### 1.1 Ver el catálogo (sin cuenta)
 
-1. Abre la tienda. La página principal muestra todos los productos disponibles con su precio y disponibilidad.
+1. Abre la tienda. La página principal muestra los productos disponibles con su precio y disponibilidad,
+   de 12 en 12. Al final de la lista, **Ver N productos más** carga los siguientes.
 2. Para encontrar un producto:
-   - Escribe en **Buscar productos** (busca por nombre y descripción; los resultados aparecen al dejar de escribir).
+   - Escribe en el buscador **¿Qué estás buscando hoy?** (busca por nombre y descripción; los resultados
+     aparecen al dejar de escribir o al tocar el botón morado de la flecha).
    - Toca una **categoría** (Audio, Computación, Almacenamiento, Accesorios, Wearables) o **Todas**.
    - Cambia el orden con **Ordenar**: por nombre, precio de menor a mayor, de mayor a menor o más recientes.
 3. Toca el nombre o la imagen de un producto para ver su **detalle**: descripción, precio y unidades disponibles.
+4. Si una búsqueda no encuentra nada, el botón **Ver todos los productos** quita los filtros.
 
-Las etiquetas de disponibilidad indican: **Disponible**, **¡Quedan N!** (5 unidades o menos) o **Agotado** (no se puede agregar).
+Sobre la imagen de cada producto aparece **¡Quedan N!** (5 unidades o menos) o **Agotado** (no se puede
+agregar). En el detalle, un punto verde indica cuántas unidades hay disponibles.
 
 ### 1.2 Crear una cuenta
 
@@ -40,15 +44,29 @@ Si el correo ya está registrado, la tienda te lo indica; usa **Iniciar sesión*
 Por seguridad, la sesión vence sola después de 8 horas; solo tienes que volver a iniciarla. Después de
 muchos intentos fallidos seguidos, la tienda pide esperar unos minutos.
 
+### 1.3.1 Recuperar la contraseña
+
+1. En **Iniciar sesión** toca **¿La olvidaste?**, junto al campo de contraseña.
+2. Escribe el correo de tu cuenta y toca **Enviar enlace**.
+3. Abre el enlace que te llega (vence en **30 minutos** y sirve una sola vez).
+4. Escribe la contraseña nueva dos veces y toca **Guardar contraseña**. Después inicia sesión con ella.
+
+Al restablecer la contraseña se cierran las sesiones que estuvieran abiertas en otros dispositivos.
+Si pides varios enlaces, solo el último funciona.
+
+> **En este proyecto el correo es simulado:** el mensaje con el enlace aparece en la consola (terminal)
+> donde corre el backend. Por seguridad, la tienda responde lo mismo exista o no la cuenta.
+
 ### 1.4 Agregar productos al carrito
 
-1. En el catálogo toca **Agregar**, o en el detalle elige la cantidad y toca **Agregar al carrito**.
-2. Aparece un aviso de confirmación y el número del ícono del carrito 🛒 aumenta.
+1. En el catálogo toca el botón **+** de la tarjeta, o en el detalle elige la cantidad y toca **Agregar al carrito**.
+2. El botón **+** se vuelve verde con un ✓ por un momento, aparece un aviso abajo y el número del ícono
+   del carrito aumenta.
 3. Si pides más unidades de las que hay, la tienda te indica cuántas quedan disponibles.
 
 ### 1.5 Modificar el carrito
 
-Toca el ícono 🛒 para abrir **Tu carrito**. Ahí puedes:
+Toca el ícono del carrito en el encabezado para abrir **Tu carrito**. Ahí puedes:
 
 | Acción | Cómo |
 |---|---|
@@ -105,6 +123,7 @@ Toca tu nombre o **Mi perfil** para:
 
 - Cambiar **Datos personales** (nombre, teléfono y dirección) y tocar **Guardar cambios**.
 - **Cambiar contraseña**: escribe la contraseña actual y la nueva, y toca **Actualizar contraseña**.
+  Tu sesión actual sigue abierta, pero se cierran las de otros dispositivos.
 
 ---
 
@@ -113,6 +132,10 @@ Toca tu nombre o **Mi perfil** para:
 Inicia sesión con una cuenta de administrador. Entrarás directamente al **Panel de administración**.
 El menú lateral (pestañas en el teléfono) tiene: **Resumen, Productos, Inventario, Pedidos y Usuarios**.
 **Ver tienda** abre la vista del cliente y **Salir** cierra la sesión.
+
+En el teléfono, las tablas se muestran como tarjetas: cada fila es un bloque con el nombre de cada dato a
+la izquierda. Las listas largas de productos, pedidos y usuarios se muestran de 15 en 15; **Ver N más**
+carga las siguientes.
 
 ### 2.1 Resumen
 
@@ -132,7 +155,9 @@ Muestra de un vistazo:
 1. Toca **+ Nuevo producto**.
 2. Completa nombre, descripción, precio (Q), categoría (puedes elegir una existente o escribir una nueva),
    **stock inicial** y **stock mínimo** (cantidad a partir de la cual se muestra la alerta).
-3. Opcional: URL de una imagen (`https://…`). Si no tiene, se muestra un ícono de su categoría.
+3. Opcional: la **foto del producto**. Toca **Subir foto** o arrastra la imagen al recuadro
+   (PNG, JPG o WebP de hasta 2 MB). También puedes abrir **O usar una URL de internet** y pegar una
+   dirección `https://…`. **Quitar** borra la foto. Sin foto se muestra el ícono de su categoría.
 4. Deja marcado **Visible en la tienda** y toca **Guardar**.
 
 **Editar un producto**
@@ -191,7 +216,11 @@ La tienda solo permite estos pasos en orden; por ejemplo, no se puede entregar u
 | Pregunta | Respuesta |
 |---|---|
 | ¿Puedo comprar sin cuenta? | No. Puedes ver el catálogo, pero para el carrito y la compra necesitas iniciar sesión. |
-| Olvidé mi contraseña | Pide a un administrador que te cree una cuenta nueva o te ayude; la recuperación por correo no está incluida en esta versión. |
+| Olvidé mi contraseña | En **Iniciar sesión** toca **¿La olvidaste?** y sigue el enlace que te llega (ver 1.3.1). |
+| “El enlace no es válido o ya venció” | El enlace dura 30 minutos, sirve una vez y se anula si pides otro. Pide uno nuevo. |
+| “Tu contraseña cambió. Inicia sesión de nuevo.” | La contraseña se cambió desde otro dispositivo; entra con la nueva. |
+| “No pudimos conectar con el servidor” | El backend no está corriendo o se reinició; espera unos segundos y reintenta. |
+| “Algo salió mal” | La página tuvo un error inesperado. Toca **Recargar la página**; tu carrito no se pierde. |
 | Mi pago fue rechazado, ¿se cobró algo? | No. Cuando un pago se rechaza no se crea el pedido ni se descuenta inventario. |
 | El precio cambió después de mi compra | Tu pedido conserva el precio con el que compraste. |
 | ¿La tienda guarda mi tarjeta? | No. Solo guarda la marca y los últimos 4 dígitos como comprobante. |

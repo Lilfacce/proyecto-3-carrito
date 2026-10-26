@@ -53,31 +53,31 @@ export default function Carrito() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Tu carrito</h1>
+        <h1 className="text-3xl font-semibold tracking-[-0.05em]">Tu carrito</h1>
         <button className="btn-texto text-red-600 hover:bg-red-50" onClick={() => setConfirmarVaciar(true)}>
           Vaciar carrito
         </button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <ul className="tarjeta divide-y divide-slate-100">
+        <ul className="tarjeta divide-y divide-borde p-2">
           {items.map((i) => (
-            <li key={i.producto_id} className="flex gap-3 p-4 sm:gap-4">
+            <li key={i.producto_id} className="flex gap-3 p-3 sm:gap-4">
               <Link to={`/productos/${i.producto_id}`} className="shrink-0">
                 <ImagenProducto
                   producto={{ id: i.producto_id, nombre: i.nombre, imagen: i.imagen, categoria: i.categoria }}
-                  className="h-20 w-20 rounded-lg sm:h-24 sm:w-24 [&_span]:text-3xl"
+                  className="h-20 w-20 rounded-imagen sm:h-24 sm:w-24"
                 />
               </Link>
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex justify-between gap-2">
                   <div className="min-w-0">
-                    <Link to={`/productos/${i.producto_id}`} className="line-clamp-2 font-semibold hover:text-marca-700">
+                    <Link to={`/productos/${i.producto_id}`} className="line-clamp-2 font-semibold tracking-[-0.014em] hover:underline">
                       {i.nombre}
                     </Link>
                     <p className="text-sm text-slate-500">{formatoQ(i.precio)} c/u</p>
                   </div>
-                  <p className="shrink-0 font-bold">{formatoQ(i.subtotal)}</p>
+                  <p className="shrink-0 font-semibold">{formatoQ(i.subtotal)}</p>
                 </div>
                 {i.sin_stock && (
                   <p className="text-xs font-medium text-red-600">Solo quedan {i.stock} unidades. Ajusta la cantidad.</p>
@@ -102,8 +102,8 @@ export default function Carrito() {
           ))}
         </ul>
 
-        <aside className="tarjeta h-fit space-y-4 p-5 lg:sticky lg:top-24">
-          <h2 className="font-semibold">Resumen</h2>
+        <aside className="tarjeta h-fit space-y-4 p-6 lg:sticky lg:top-24">
+          <h2 className="text-xl font-semibold tracking-[-0.05em]">Resumen</h2>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
               <dt className="text-slate-500">Productos ({unidades})</dt>
@@ -111,9 +111,9 @@ export default function Carrito() {
             </div>
             <div className="flex justify-between">
               <dt className="text-slate-500">Envío</dt>
-              <dd className="text-emerald-600">Gratis</dd>
+              <dd className="text-emerald-700">Gratis</dd>
             </div>
-            <div className="flex justify-between border-t border-slate-100 pt-3 text-base font-bold">
+            <div className="flex justify-between border-t border-borde pt-3 text-base font-semibold">
               <dt>Total</dt>
               <dd>{formatoQ(total)}</dd>
             </div>

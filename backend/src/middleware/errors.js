@@ -26,6 +26,9 @@ export function errorHandler(err, req, res, next) {
   if (err.type === 'entity.parse.failed') {
     return res.status(400).json({ error: 'JSON mal formado' });
   }
+  if (err.type === 'entity.too.large') {
+    return res.status(413).json({ error: 'El archivo es demasiado grande (máximo 2 MB)' });
+  }
   // Violación de UNIQUE en PostgreSQL
   if (err.code === '23505') {
     return res.status(409).json({ error: 'El registro ya existe' });

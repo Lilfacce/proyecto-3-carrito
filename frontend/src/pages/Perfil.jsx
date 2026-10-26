@@ -3,7 +3,7 @@ import { api } from '../api.js'
 import { Alerta } from '../components/ui.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
-import { ReglasPassword } from './Registro.jsx'
+import ReglasPassword from '../components/ReglasPassword.jsx'
 
 export default function Perfil() {
   const { usuario, setUsuario } = useAuth()
@@ -43,7 +43,7 @@ export default function Perfil() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold">Mi perfil</h1>
+      <h1 className="text-3xl font-semibold tracking-[-0.05em]">Mi perfil</h1>
       <form onSubmit={guardarPerfil} className="tarjeta space-y-4 p-5">
         <h2 className="font-semibold">Datos personales</h2>
         <Alerta>{errorPerfil}</Alerta>

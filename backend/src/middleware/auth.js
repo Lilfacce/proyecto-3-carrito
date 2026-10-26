@@ -52,7 +52,7 @@ export async function requireAuth(req, res, next) {
   }
 
   const { rows } = await query(
-    'SELECT id, nombre, email, rol, activo, telefono, direccion FROM usuarios WHERE id = $1',
+    'SELECT id, nombre, email, rol, activo, telefono, direccion, password_cambiado_en FROM usuarios WHERE id = $1',
     [payload.sub],
   );
   const usuario = rows[0];
@@ -60,6 +60,14 @@ export async function requireAuth(req, res, next) {
     res.clearCookie(COOKIE_NAME, { path: '/' });
     throw new HttpError(401, 'La cuenta no existe o está desactivada');
   }
+  // El JWT guarda la emisión en segundos y el cambio se guarda truncado al segundo: un token
+  // emitido en el mismo segundo del cambio (la sesión renovada) sigue siendo válido.
+  const cambio = usuario.password_cambiado_en;
+  if (cambio && payload.iat < Math.floor(cambio.getTime() / 1000)) {
+    res.clearCookie(COOKIE_NAME, { path: '/' });
+    throw new HttpError(401, 'Tu contraseña cambió. Inicia sesión de nuevo.');
+  }
+  delete usuario.password_cambiado_en;
   req.usuario = usuario;
   next();
 }
