@@ -2,7 +2,9 @@
 
 Guía paso a paso para usar la tienda en línea TecnoXela, tanto como **cliente** como **administrador**.
 La aplicación funciona igual en computadora y en teléfono; en pantallas pequeñas el menú se abre con el
-botón ☰ de la esquina superior derecha.
+botón de **dos líneas** de la esquina superior derecha.
+
+**Versión:** 26/10/2026.
 
 > Dirección de la tienda en la demostración: **http://localhost:3000**
 
@@ -39,7 +41,8 @@ Si el correo ya está registrado, la tienda te lo indica; usa **Iniciar sesión*
 
 1. Toca **Iniciar sesión**, escribe tu correo y contraseña y confirma.
 2. Si intentaste agregar algo al carrito sin sesión, al entrar vuelves a la página donde estabas.
-3. Para salir, toca **Salir** en el encabezado (o en el menú ☰ en el teléfono).
+3. Con la sesión iniciada, el encabezado muestra un círculo con tu inicial y tu nombre (abre **Mi perfil**)
+   y el botón **Salir**. En el teléfono ambos están dentro del menú.
 
 Por seguridad, la sesión vence sola después de 8 horas; solo tienes que volver a iniciarla. Después de
 muchos intentos fallidos seguidos, la tienda pide esperar unos minutos.
@@ -119,7 +122,7 @@ no se puede cancelar desde la tienda.
 
 ### 1.9 Mi perfil
 
-Toca tu nombre o **Mi perfil** para:
+Toca tu nombre en el encabezado (o **Mi perfil** en el menú del teléfono) para:
 
 - Cambiar **Datos personales** (nombre, teléfono y dirección) y tocar **Guardar cambios**.
 - **Cambiar contraseña**: escribe la contraseña actual y la nueva, y toca **Actualizar contraseña**.
@@ -211,7 +214,18 @@ La tienda solo permite estos pasos en orden; por ejemplo, no se puede entregar u
 
 ---
 
-## Parte 3. Preguntas frecuentes
+## Parte 3. Uso con teclado y accesibilidad
+
+| Necesitas | Cómo |
+|---|---|
+| Moverte por la página | **Tab** avanza y **Mayús + Tab** retrocede; el elemento activo se marca con un contorno morado |
+| Cerrar una ventana (detalle de pedido, confirmación, formulario) | **Escape** o el botón **×**. Si hay dos ventanas abiertas, Escape cierra solo la de arriba |
+| Volver a donde estabas | Al cerrar una ventana, el foco regresa al botón que la abrió |
+| Menos animaciones | Activa “Reducir movimiento” en tu sistema (Windows: *Configuración → Accesibilidad → Efectos visuales → Efectos de animación*; iPhone/Android: opciones de accesibilidad). La tienda quita los desplazamientos y deja solo fundidos |
+
+---
+
+## Parte 4. Preguntas frecuentes
 
 | Pregunta | Respuesta |
 |---|---|
@@ -226,6 +240,20 @@ La tienda solo permite estos pasos en orden; por ejemplo, no se puede entregar u
 | ¿La tienda guarda mi tarjeta? | No. Solo guarda la marca y los últimos 4 dígitos como comprobante. |
 | “Tu cuenta está desactivada” | Un administrador desactivó la cuenta; contáctalo. |
 | “Demasiados intentos” | Espera 15 minutos antes de volver a intentar iniciar sesión. |
+
+---
+
+## Parte 5. Qué significan las animaciones
+
+Las animaciones solo confirman algo o te orientan; no hace falta esperarlas para seguir.
+
+| Ves | Significa |
+|---|---|
+| El botón **+** gira y luego muestra un ✓ verde | El producto se agregó al carrito |
+| El ícono del carrito se sacude y su número salta | Cambió la cantidad de productos del carrito |
+| La foto de un producto “viaja” al abrirlo | Estás viendo el detalle del producto que tocaste |
+| Bloques grises que laten | La información se está cargando |
+| Un círculo y un ✓ que se dibujan | Tu compra se registró |
 
 ---
 
