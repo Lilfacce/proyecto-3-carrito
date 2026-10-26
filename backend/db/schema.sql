@@ -1,6 +1,7 @@
 -- Esquema de la base de datos de la tienda.
 -- Se puede ejecutar varias veces: borra y vuelve a crear todo.
 
+DROP TABLE IF EXISTS recuperaciones_password CASCADE;
 DROP TABLE IF EXISTS pagos_simulados CASCADE;
 DROP TABLE IF EXISTS detalle_pedido CASCADE;
 DROP TABLE IF EXISTS pedidos CASCADE;
@@ -17,7 +18,9 @@ CREATE TABLE usuarios (
   activo         BOOLEAN      NOT NULL DEFAULT TRUE,
   telefono       VARCHAR(20),
   direccion      VARCHAR(255),
-  creado_en      TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  creado_en      TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  -- Las sesiones emitidas antes de este momento dejan de valer (cambio o recuperación de contraseña).
+  password_cambiado_en TIMESTAMPTZ
 );
 
 CREATE TABLE productos (
@@ -80,3 +83,15 @@ CREATE TABLE pagos_simulados (
   referencia    VARCHAR(40)   NOT NULL,
   fecha         TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
+
+-- Enlaces para restablecer la contraseña. Solo se guarda el hash del token: quien lea la
+-- base de datos no puede usar los enlaces.
+CREATE TABLE recuperaciones_password (
+  id          SERIAL PRIMARY KEY,
+  usuario_id  INTEGER     NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+  token_hash  CHAR(64)    NOT NULL UNIQUE,
+  expira_en   TIMESTAMPTZ NOT NULL,
+  usado_en    TIMESTAMPTZ,
+  creado_en   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_recuperaciones_usuario ON recuperaciones_password (usuario_id);

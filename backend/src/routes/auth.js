@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'node:crypto';
 import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import { config } from '../config.js';
-import { query } from '../db.js';
+import { query, withTransaction } from '../db.js';
+import { enviarCorreo } from '../correo.js';
 import { COOKIE_NAME, iniciarSesion, requireAuth } from '../middleware/auth.js';
 import { HttpError } from '../middleware/errors.js';
 
@@ -116,7 +118,81 @@ router.put('/me/password', requireAuth, async (req, res) => {
     throw new HttpError(400, 'La contraseña actual no es correcta');
   }
   const hash = await bcrypt.hash(nueva, config.bcryptRounds);
-  await query('UPDATE usuarios SET password_hash = $1 WHERE id = $2', [hash, req.usuario.id]);
+  await query(`UPDATE usuarios SET password_hash = $1, password_cambiado_en = date_trunc('second', NOW()) WHERE id = $2`, [
+    hash,
+    req.usuario.id,
+  ]);
+  // Las demás sesiones se cierran; esta se renueva para que el usuario siga dentro.
+  iniciarSesion(res, req.usuario);
+  res.status(204).end();
+});
+
+// ---- Recuperar contraseña ----
+
+const VIGENCIA_MINUTOS = 30;
+const hashToken = (token) => createHash('sha256').update(token).digest('hex');
+
+const MENSAJE_RECUPERAR =
+  'Si el correo pertenece a una cuenta activa, te enviamos un enlace para restablecer la contraseña.';
+
+router.post('/recuperar', authLimiter, async (req, res) => {
+  const { email } = z.object({ email: z.string().trim().toLowerCase().max(150) }).parse(req.body);
+  const { rows } = await query('SELECT id, nombre, email FROM usuarios WHERE email = $1 AND activo = TRUE', [email]);
+  const usuario = rows[0];
+  if (usuario) {
+    const token = randomBytes(32).toString('hex');
+    await withTransaction(async (c) => {
+      // Un enlace nuevo invalida los anteriores que no se hayan usado.
+      await c.query('UPDATE recuperaciones_password SET usado_en = NOW() WHERE usuario_id = $1 AND usado_en IS NULL', [
+        usuario.id,
+      ]);
+      await c.query(
+        `INSERT INTO recuperaciones_password (usuario_id, token_hash, expira_en)
+         VALUES ($1, $2, NOW() + make_interval(mins => $3))`,
+        [usuario.id, hashToken(token), VIGENCIA_MINUTOS],
+      );
+    });
+    await enviarCorreo({
+      para: usuario.email,
+      asunto: 'Restablece tu contraseña de TecnoXela',
+      texto: `Hola, ${usuario.nombre}.
+
+Para elegir una contraseña nueva abre este enlace (vence en ${VIGENCIA_MINUTOS} minutos):
+${config.urlPublica}/restablecer?token=${token}
+
+Si no lo pediste, ignora este correo.`,
+    });
+  }
+  // La respuesta es la misma exista o no la cuenta, para no revelar qué correos están registrados.
+  res.json({ mensaje: MENSAJE_RECUPERAR });
+});
+
+const restablecerSchema = z.object({
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'El enlace no es válido'),
+  password: passwordSchema,
+});
+
+router.post('/restablecer', authLimiter, async (req, res) => {
+  const { token, password } = restablecerSchema.parse(req.body);
+  const hash = await bcrypt.hash(password, config.bcryptRounds);
+  const cambiado = await withTransaction(async (c) => {
+    // Se marca como usado en la misma consulta para que el enlace no sirva dos veces.
+    const { rows } = await c.query(
+      `UPDATE recuperaciones_password r SET usado_en = NOW()
+       FROM usuarios u
+       WHERE r.token_hash = $1 AND r.usado_en IS NULL AND r.expira_en > NOW()
+         AND u.id = r.usuario_id AND u.activo = TRUE
+       RETURNING r.usuario_id`,
+      [hashToken(token)],
+    );
+    if (!rows[0]) return false;
+    await c.query(`UPDATE usuarios SET password_hash = $1, password_cambiado_en = date_trunc('second', NOW()) WHERE id = $2`, [
+      hash,
+      rows[0].usuario_id,
+    ]);
+    return true;
+  });
+  if (!cambiado) throw new HttpError(400, 'El enlace no es válido o ya venció. Pide uno nuevo.');
   res.status(204).end();
 });
 

@@ -20,6 +20,9 @@ export const config = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? '8h',
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS ?? 10),
   timezone: process.env.DB_TIMEZONE ?? 'America/Guatemala',
+  // Dirección pública del frontend, para armar los enlaces de los correos (no se toma del
+  // encabezado Host, que un atacante podría falsear).
+  urlPublica: (process.env.PUBLIC_URL ?? 'http://localhost:5173').replace(/\/$/, ''),
   // Orígenes extra que pueden hacer POST/PUT/PATCH/DELETE (el del propio servidor siempre se acepta).
   // En desarrollo se incluye el servidor de Vite.
   origenesPermitidos: (process.env.ALLOWED_ORIGINS ?? (env === 'production' ? '' : 'http://localhost:5173'))

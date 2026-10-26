@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { api } from '../../api.js'
 import ImagenProducto from '../../components/ImagenProducto.jsx'
-import { Alerta, Confirmar, Modal, Spinner } from '../../components/ui.jsx'
+import SelectorImagen from '../../components/SelectorImagen.jsx'
+import { Alerta, Confirmar, Modal, Spinner, VerMas } from '../../components/ui.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 import { formatoQ } from '../../format.js'
+import { usePorPartes } from '../../hooks.js'
 
 const VACIO = { nombre: '', descripcion: '', precio: '', stock: '', stock_minimo: 5, categoria: '', imagen: '', activo: true }
 
@@ -71,10 +73,11 @@ function FormProducto({ inicial, categorias, onGuardar, onCancelar }) {
           <input id="stock_minimo" type="number" min="0" step="1" className="input" required {...campo('stock_minimo')} />
         </div>
       </div>
-      <div>
-        <label className="label" htmlFor="imagen">URL de la imagen <span className="text-slate-400">(opcional)</span></label>
-        <input id="imagen" type="url" className="input" placeholder="https://…" {...campo('imagen')} />
-      </div>
+      <SelectorImagen
+        valor={form.imagen}
+        onCambiar={(imagen) => setForm((f) => ({ ...f, imagen }))}
+        producto={{ id: form.id ?? 0, nombre: form.nombre, categoria: form.categoria }}
+      />
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className="h-4 w-4 accent-marca-600" checked={form.activo} onChange={(e) => setForm({ ...form, activo: e.target.checked })} />
         Visible en la tienda
@@ -101,9 +104,11 @@ export default function Productos() {
   useEffect(cargar, [cargar])
 
   const categorias = useMemo(() => [...new Set((productos ?? []).map((p) => p.categoria))].sort(), [productos])
-  const filtrados = (productos ?? []).filter((p) =>
-    `${p.nombre} ${p.categoria}`.toLowerCase().includes(busqueda.toLowerCase()),
+  const filtrados = useMemo(
+    () => (productos ?? []).filter((p) => `${p.nombre} ${p.categoria}`.toLowerCase().includes(busqueda.toLowerCase())),
+    [productos, busqueda],
   )
+  const { parte, restantes, total, verMas } = usePorPartes(filtrados)
 
   const guardar = async (datos) => {
     const { id, nombre, descripcion, precio, stock, stock_minimo, categoria, imagen, activo } = datos
@@ -132,13 +137,13 @@ export default function Productos() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Productos</h1>
+        <h1 className="text-3xl font-semibold tracking-[-0.05em]">Productos</h1>
         <button className="btn-primario" onClick={() => setEditando('nuevo')}>+ Nuevo producto</button>
       </div>
       <input type="search" className="input sm:max-w-sm" placeholder="Buscar por nombre o categoría…" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
 
       <div className="tarjeta overflow-x-auto">
-        <table className="tabla w-full min-w-[640px]">
+        <table className="tabla tabla-movil w-full sm:min-w-[640px]">
           <thead>
             <tr>
               <th>Producto</th>
@@ -150,23 +155,23 @@ export default function Productos() {
             </tr>
           </thead>
           <tbody>
-            {filtrados.map((p) => (
+            {parte.map((p) => (
               <tr key={p.id} className={p.activo ? '' : 'opacity-60'}>
-                <td>
+                <td data-etiqueta="Producto">
                   <div className="flex items-center gap-3">
-                    <ImagenProducto producto={p} className="h-10 w-10 shrink-0 rounded-md [&_span]:text-lg" />
-                    <span className="font-medium">{p.nombre}</span>
+                    <ImagenProducto producto={p} className="h-10 w-10 shrink-0 rounded-xl" />
+                    <span className="min-w-40 font-medium">{p.nombre}</span>
                   </div>
                 </td>
-                <td className="text-slate-600">{p.categoria}</td>
-                <td className="text-right">{formatoQ(p.precio)}</td>
-                <td className={`text-right font-semibold ${p.stock_bajo ? 'text-amber-600' : ''}`}>{p.stock}</td>
-                <td>
+                <td data-etiqueta="Categoría" className="text-slate-600">{p.categoria}</td>
+                <td data-etiqueta="Precio" className="text-right">{formatoQ(p.precio)}</td>
+                <td data-etiqueta="Stock" className={`text-right font-semibold ${p.stock_bajo ? 'text-amber-700' : ''}`}>{p.stock}</td>
+                <td data-etiqueta="Estado">
                   <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
                     {p.activo ? 'Activo' : 'Inactivo'}
                   </span>
                 </td>
-                <td className="text-right whitespace-nowrap">
+                <td data-etiqueta="Acciones" className="text-right whitespace-nowrap">
                   <button className="btn-texto text-xs" onClick={() => setEditando(p)}>Editar</button>
                   {p.activo && (
                     <button className="btn-texto text-xs text-red-600 hover:bg-red-50" onClick={() => setEliminando(p)}>
@@ -179,6 +184,7 @@ export default function Productos() {
           </tbody>
         </table>
         {filtrados.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No hay productos que coincidan.</p>}
+        <VerMas restantes={restantes} mostrados={parte.length} total={total} onClick={verMas} />
       </div>
 
       <Modal abierto={!!editando} titulo={editando === 'nuevo' ? 'Nuevo producto' : 'Editar producto'} onCerrar={() => setEditando(null)}>

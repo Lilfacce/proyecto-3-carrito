@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../api.js'
-import { Alerta, Confirmar, EstadoBadge, Modal, Spinner } from '../../components/ui.jsx'
+import { Alerta, Confirmar, EstadoBadge, Modal, Spinner, VerMas } from '../../components/ui.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { useToast } from '../../context/ToastContext.jsx'
 import { formatoFecha, formatoQ } from '../../format.js'
-import { ReglasPassword } from '../Registro.jsx'
+import { usePorPartes } from '../../hooks.js'
+import ReglasPassword from '../../components/ReglasPassword.jsx'
 
 function NuevoUsuario({ onCreado, onCancelar }) {
   const [form, setForm] = useState({ nombre: '', email: '', password: '', rol: 'admin' })
@@ -63,6 +64,7 @@ export default function Usuarios() {
   const [creando, setCreando] = useState(false)
   const [detalle, setDetalle] = useState(null)
   const [confirmar, setConfirmar] = useState(null) // { usuario, cambios, mensaje }
+  const { parte, restantes, total, verMas } = usePorPartes(usuarios)
 
   const cargar = useCallback(() => {
     api.admin
@@ -99,7 +101,7 @@ export default function Usuarios() {
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Usuarios y clientes</h1>
+        <h1 className="text-3xl font-semibold tracking-[-0.05em]">Usuarios y clientes</h1>
         <button className="btn-primario" onClick={() => setCreando(true)}>+ Nuevo usuario</button>
       </div>
 
@@ -117,7 +119,7 @@ export default function Usuarios() {
         <Spinner />
       ) : (
         <div className="tarjeta overflow-x-auto">
-          <table className="tabla w-full min-w-[760px]">
+          <table className="tabla tabla-movil w-full sm:min-w-[760px]">
             <thead>
               <tr>
                 <th>Usuario</th>
@@ -130,26 +132,26 @@ export default function Usuarios() {
               </tr>
             </thead>
             <tbody>
-              {usuarios.map((u) => {
+              {parte.map((u) => {
                 const esYo = u.id === yo.id
                 return (
                   <tr key={u.id} className={u.activo ? '' : 'opacity-60'}>
-                    <td>
-                      <button className="text-left hover:text-marca-600" onClick={() => verDetalle(u)}>
-                        <p className="font-medium">{u.nombre} {esYo && <span className="text-xs text-slate-400">(tú)</span>}</p>
+                    <td data-etiqueta="Usuario">
+                      <button className="text-left hover:underline" onClick={() => verDetalle(u)}>
+                        <p className="font-medium">{u.nombre} {esYo && <span className="text-xs text-gris">(tú)</span>}</p>
                         <p className="text-xs text-slate-500">{u.email}</p>
                       </button>
                     </td>
-                    <td className="capitalize">{u.rol}</td>
-                    <td className="text-right">{u.pedidos}</td>
-                    <td className="text-right">{formatoQ(u.total_comprado)}</td>
-                    <td className="whitespace-nowrap text-slate-500">{formatoFecha(u.creado_en)}</td>
-                    <td>
+                    <td data-etiqueta="Rol" className="capitalize">{u.rol}</td>
+                    <td data-etiqueta="Pedidos" className="text-right">{u.pedidos}</td>
+                    <td data-etiqueta="Total comprado" className="text-right">{formatoQ(u.total_comprado)}</td>
+                    <td data-etiqueta="Registro" className="whitespace-nowrap text-slate-500">{formatoFecha(u.creado_en)}</td>
+                    <td data-etiqueta="Estado">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${u.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
                         {u.activo ? 'Activo' : 'Desactivado'}
                       </span>
                     </td>
-                    <td className="text-right whitespace-nowrap">
+                    <td data-etiqueta="Acciones" className="text-right whitespace-nowrap">
                       {!esYo && (
                         <>
                           <button
@@ -186,6 +188,7 @@ export default function Usuarios() {
               })}
             </tbody>
           </table>
+          <VerMas restantes={restantes} mostrados={parte.length} total={total} onClick={verMas} />
         </div>
       )}
 
@@ -205,7 +208,7 @@ export default function Usuarios() {
       <Modal abierto={!!detalle} titulo="Detalle del cliente" onCerrar={() => setDetalle(null)}>
         {detalle && (
           <div className="space-y-4 text-sm">
-            <div className="rounded-lg bg-slate-50 p-4">
+            <div className="rounded-imagen bg-canvas p-4">
               <p className="text-base font-semibold">{detalle.usuario.nombre}</p>
               <p className="text-slate-600">{detalle.usuario.email}</p>
               {detalle.usuario.telefono && <p className="text-slate-600">Tel. {detalle.usuario.telefono}</p>}

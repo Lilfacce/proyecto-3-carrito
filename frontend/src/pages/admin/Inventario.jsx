@@ -35,14 +35,14 @@ function FilaInventario({ producto, onActualizado }) {
 
   return (
     <tr>
-      <td className="font-medium">{producto.nombre}</td>
-      <td className="text-right text-lg font-bold">{producto.stock}</td>
-      <td className="text-right text-slate-500">{producto.stock_minimo}</td>
-      <td>
+      <td data-etiqueta="Producto" className="font-medium">{producto.nombre}</td>
+      <td data-etiqueta="Stock" className="text-right text-lg font-semibold">{producto.stock}</td>
+      <td data-etiqueta="Mínimo" className="text-right text-slate-500">{producto.stock_minimo}</td>
+      <td data-etiqueta="Nivel">
         <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${estilos[nivel]}`}>{textos[nivel]}</span>
       </td>
-      <td className="text-right text-slate-600">{formatoQ(producto.precio * producto.stock)}</td>
-      <td>
+      <td data-etiqueta="Valor" className="text-right text-slate-600">{formatoQ(producto.precio * producto.stock)}</td>
+      <td data-etiqueta="Ajustar">
         <form
           className="flex items-center justify-end gap-1"
           onSubmit={(e) => {
@@ -94,16 +94,16 @@ export default function Inventario() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold">Inventario</h1>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="tarjeta p-4"><p className="text-xs text-slate-500 uppercase">Unidades</p><p className="text-xl font-bold">{unidades}</p></div>
-        <div className="tarjeta p-4"><p className="text-xs text-slate-500 uppercase">Valor</p><p className="text-xl font-bold">{formatoQ(valor)}</p></div>
-        <div className="tarjeta p-4"><p className="text-xs text-slate-500 uppercase">Stock bajo</p><p className="text-xl font-bold text-amber-600">{bajos.length}</p></div>
+      <h1 className="text-3xl font-semibold tracking-[-0.05em]">Inventario</h1>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="tarjeta p-4 sm:p-5"><p className="text-sm text-gris">Unidades</p><p className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{unidades}</p></div>
+        <div className="tarjeta p-4 sm:p-5"><p className="text-sm text-gris">Stock bajo</p><p className="mt-1 text-xl font-semibold text-amber-700 tabular-nums sm:text-2xl">{bajos.length}</p></div>
+        <div className="tarjeta col-span-2 p-4 sm:col-span-1 sm:p-5"><p className="text-sm text-gris">Valor</p><p className="mt-1 text-xl font-semibold tabular-nums sm:text-2xl">{formatoQ(valor)}</p></div>
       </div>
 
       {bajos.length > 0 && (
         <Alerta tipo="aviso">
-          Hay {bajos.length} producto(s) en o por debajo de su stock mínimo: {bajos.map((p) => p.nombre).join(', ')}.
+          {bajos.length === 1 ? 'Hay 1 producto' : `Hay ${bajos.length} productos`} en o por debajo de su stock mínimo: {bajos.map((p) => p.nombre).join(', ')}.
         </Alerta>
       )}
 
@@ -113,7 +113,7 @@ export default function Inventario() {
       </label>
 
       <div className="tarjeta overflow-x-auto">
-        <table className="tabla w-full min-w-[720px]">
+        <table className="tabla tabla-movil w-full sm:min-w-[720px]">
           <thead>
             <tr>
               <th>Producto</th>

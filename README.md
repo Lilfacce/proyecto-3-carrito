@@ -12,7 +12,7 @@ y **panel de administración** (resumen, productos, inventario, pedidos y usuari
 | Backend | Node.js + Express 5 (API REST) |
 | Base de datos | PostgreSQL |
 | Seguridad | bcrypt (contraseñas), JWT en cookie `httpOnly`, roles cliente/admin, Helmet, rate limiting, validación con Zod |
-| Pruebas | `node:test` + Supertest (integración contra PostgreSQL) |
+| Pruebas | `node:test` + Supertest (API contra PostgreSQL) · Vitest + Testing Library (interfaz) |
 
 ## Requisitos
 
@@ -38,6 +38,8 @@ npm install
 cp .env.example .env      # en Windows: copy .env.example .env
 # Edita .env: DATABASE_URL, TEST_DATABASE_URL y JWT_SECRET
 npm run db:reset          # ⚠ BORRA y recrea las tablas, luego carga datos de ejemplo
+# Si ya tenías una base de una versión anterior y no quieres borrarla:
+npm run db:migrar         # agrega las tablas/columnas nuevas sin tocar los datos
 
 # 3. Frontend
 cd ../frontend
@@ -83,15 +85,21 @@ Tarjetas de prueba (pago simulado, cualquier fecha futura y CVV):
 ## Pruebas
 
 ```bash
-cd backend && npm test
+cd backend && npm test     # 50 pruebas de la API
+cd frontend && npm test    # 25 pruebas de la interfaz
 ```
 
-40 pruebas automatizadas. Cubren registro/login, permisos por rol en **todas** las rutas de administración,
+**Backend (50).** Cubren registro/login, permisos por rol en **todas** las rutas de administración,
 carrito y validación de cantidades, precio tomado del servidor (aunque el navegador envíe otro),
 pago rechazado sin efectos, **dos compras simultáneas del último producto** (solo una gana),
 edición y desactivación de productos, inventario, transiciones de estado de pedidos, cancelación con
 devolución de stock, gestión de usuarios y roles, sesión expirada o falsificada, pedidos ajenos,
-protección CSRF por origen e intentos de inyección SQL. El detalle está en [docs/PRUEBAS.md](docs/PRUEBAS.md).
+protección CSRF por origen, intentos de inyección SQL, paginación del catálogo, subida de fotos (tipo real,
+tamaño y permisos) y recuperación de contraseña (enlace de un solo uso, vencimiento y cierre de sesiones).
+
+**Frontend (25).** Catálogo con la API simulada (skeleton, “ver más”, estado vacío, agregar con y sin
+sesión, admin, agotados), modales (foco, Escape con modales anidados, Tab atrapado), cliente HTTP
+(errores, sin conexión, archivos) y utilidades. El detalle está en [docs/PRUEBAS.md](docs/PRUEBAS.md).
 
 > `npm test` borra y recrea la base `TEST_DATABASE_URL`. No apuntes esa variable a la base real
 > (las pruebas se niegan a correr si es igual a `DATABASE_URL`).
@@ -101,20 +109,23 @@ protección CSRF por origen e intentos de inyección SQL. El detalle está en [d
 ```
 proyecto-3/
 ├── backend/
-│   ├── db/            schema.sql, init.js (crea tablas), seed.js (datos de ejemplo)
+│   ├── db/            schema.sql, init.js (crea tablas), seed.js (datos de ejemplo), migraciones.sql
+│   ├── uploads/       fotos subidas desde el panel (no se sube a Git)
 │   ├── src/
 │   │   ├── app.js     configuración de Express y rutas
 │   │   ├── db.js      pool de PostgreSQL y helper de transacciones
 │   │   ├── pago.js    pasarela de pago simulada (Luhn, vencimiento, últimos 4)
+│   │   ├── correo.js  envío de correo simulado (consola)
 │   │   ├── middleware/ auth (JWT + roles) y manejo de errores
-│   │   └── routes/    auth, productos, carrito, pedidos, admin
+│   │   └── routes/    auth, productos, carrito, pedidos, admin, imagenes
 │   └── tests/
 └── frontend/
     └── src/
         ├── api.js     cliente HTTP
         ├── context/   sesión, carrito y notificaciones
-        ├── components/
-        └── pages/     vistas del cliente y admin/
+        ├── components/ UI común, íconos, selector de imágenes, límite de errores
+        ├── pages/     vistas del cliente y admin/
+        └── test/      pruebas de la interfaz (Vitest)
 ```
 
 ## Endpoints principales
@@ -125,10 +136,12 @@ proyecto-3/
 | POST | `/api/auth/login` · `/logout` | público | Iniciar / cerrar sesión |
 | GET/PUT | `/api/auth/me` | sesión | Ver / editar perfil |
 | PUT | `/api/auth/me/password` | sesión | Cambiar contraseña |
-| GET | `/api/productos?q=&categoria=&orden=` | público | Catálogo con búsqueda |
+| POST | `/api/auth/recuperar` · `/restablecer` | público | Pedir enlace por correo (simulado) / elegir contraseña nueva |
+| GET | `/api/productos?q=&categoria=&orden=&limite=&pagina=` | público | Catálogo con búsqueda y paginación opcional |
 | GET | `/api/productos/:id` · `/categorias` | público | Detalle / categorías |
 | POST/PUT/DELETE | `/api/productos[/:id]` | admin | CRUD de productos (eliminar = desactivar) |
 | PATCH | `/api/productos/:id/stock` | admin | Ajuste de inventario |
+| POST | `/api/admin/imagenes` | admin | Subir foto de producto (PNG/JPG/WebP, máx. 2 MB) |
 | GET/POST/DELETE | `/api/carrito` | cliente | Ver, agregar, vaciar |
 | PUT/DELETE | `/api/carrito/:productoId` | cliente | Cambiar cantidad / quitar |
 | POST | `/api/pedidos` | cliente | Confirmar compra (transacción) |
@@ -150,4 +163,9 @@ proyecto-3/
 - **CSRF**: además de `SameSite`, las escrituras con un `Origin` ajeno se rechazan (403).
 - **Inventario sin pérdidas**: editar un producto no sobrescribe su stock; el stock solo cambia con ajustes atómicos, compras y cancelaciones.
 - **Usuarios desactivados** pierden el acceso de inmediato (se verifica en cada petición).
+- **Recuperar contraseña**: enlace de un solo uso que vence en 30 min; en la base solo se guarda su hash
+  SHA-256 y la respuesta no revela si el correo existe. Cambiar o restablecer la contraseña cierra las
+  demás sesiones abiertas.
+- **Fotos subidas**: el tipo se valida por los bytes del archivo (no por la extensión), con nombre aleatorio
+  y límite de 2 MB.
 - Los productos eliminados se **desactivan** para conservar el historial de pedidos.

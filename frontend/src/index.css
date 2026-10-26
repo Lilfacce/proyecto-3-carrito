@@ -1,55 +1,310 @@
 @import "tailwindcss";
 
+/* Tokens de diseño: ver frontend/DESIGN.md. */
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --color-marca-50: #eef4ff;
-  --color-marca-100: #dae6ff;
-  --color-marca-500: #3b6cf6;
-  --color-marca-600: #2552e6;
-  --color-marca-700: #1d41c4;
-  --color-marca-900: #142a73;
+
+  /* Paleta base */
+  --color-canvas: #f2f4f5;
+  --color-tinta: #000000;
+  --color-borde: #ebebeb;
+  --color-gris: #787574;
+  --color-pizarra: #332f2d;
+  --color-violeta: #5433eb;
+  --color-violeta-suave: #c0b5f3;
+
+  /* "marca" es el color de las acciones y estados seleccionados: tinta negra.
+     El violeta se reserva para el logotipo y el botón de búsqueda. */
+  --color-marca-50: #f2f4f5;
+  --color-marca-100: #ebebeb;
+  --color-marca-500: #332f2d;
+  --color-marca-600: #000000;
+  --color-marca-700: #332f2d;
+  --color-marca-900: #000000;
+
+  /* Grises cálidos neutros en lugar del slate azulado de Tailwind. */
+  --color-slate-50: #f7f8f8;
+  --color-slate-100: #f2f4f5;
+  --color-slate-200: #ebebeb;
+  --color-slate-300: #dcdcdc;
+  --color-slate-400: #a3a09f;
+  --color-slate-500: #787574;
+  --color-slate-600: #5c5958;
+  --color-slate-700: #332f2d;
+  --color-slate-800: #1c1a19;
+  --color-slate-900: #000000;
+
+  --radius-tarjeta: 28px;
+  --radius-imagen: 20px;
+
+  --shadow-suave: rgba(0, 0, 0, 0.06) 0px 2px 8px 0px;
+  --shadow-tarjeta: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+  --shadow-flotante: rgba(0, 0, 0, 0.12) 0px 4px 24px 0px;
+  --shadow-violeta: rgba(69, 36, 219, 0.34) 0px 4px 24px 0px;
+
+  /* Movimiento: curvas fuertes para UI (nunca ease-in). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply bg-canvas text-tinta antialiased;
+    letter-spacing: -0.011em;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.03em;
+  }
+  ::selection {
+    @apply bg-violeta-suave;
+  }
+  input,
+  textarea {
+    caret-color: var(--color-violeta);
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-violeta;
+  }
+  table,
+  dd {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 /* En Tailwind 4 solo las @utility se pueden reutilizar con @apply. */
 @utility btn {
-  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition
-    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-marca-500
-    disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2 text-sm font-medium transition
+    focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violeta
+    active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100;
 }
 
 @layer components {
   .btn-primario {
-    @apply btn bg-marca-600 text-white hover:bg-marca-700;
+    @apply btn bg-tinta text-white hover:bg-pizarra;
   }
   .btn-secundario {
-    @apply btn border border-slate-300 bg-white text-slate-700 hover:bg-slate-100;
+    @apply btn border border-borde bg-white text-tinta shadow-suave hover:bg-canvas;
   }
   .btn-peligro {
     @apply btn bg-red-600 text-white hover:bg-red-700;
   }
   .btn-texto {
-    @apply btn px-2 text-marca-600 hover:bg-marca-50;
+    @apply btn px-3 text-tinta hover:bg-black/5;
   }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm
-      placeholder:text-slate-400 focus:border-marca-500 focus:ring-2 focus:ring-marca-100 focus:outline-none;
+    @apply w-full rounded-full border border-black/10 bg-white px-4 py-2.5 text-sm transition
+      placeholder:text-gris focus:border-black/30 focus:ring-4 focus:ring-black/5 focus:outline-none;
+  }
+  textarea.input {
+    @apply rounded-2xl;
   }
   .label {
-    @apply mb-1 block text-sm font-medium text-slate-700;
+    @apply mb-1.5 block pl-1 text-sm font-medium text-tinta;
   }
   .tarjeta {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-tarjeta bg-white shadow-tarjeta;
+  }
+  .chip {
+    @apply inline-flex shrink-0 items-center gap-2 rounded-full border border-borde bg-white px-4 py-1.5 text-sm text-tinta
+      shadow-suave transition hover:border-black/20;
+  }
+  .chip-activo {
+    @apply border-tinta bg-tinta text-white hover:border-tinta;
   }
   .tabla th {
-    @apply bg-slate-50 px-4 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase;
+    @apply bg-white px-4 py-3 text-left text-xs font-medium tracking-normal text-gris;
   }
   .tabla td {
-    @apply border-t border-slate-100 px-4 py-3 text-sm;
+    @apply border-t border-borde px-4 py-3 text-sm;
+  }
+}
+
+/* En pantallas pequeñas las tablas del admin se leen como tarjetas: cada fila es un bloque
+   y cada celda muestra su encabezado (data-etiqueta) a la izquierda. */
+@media (width < 40rem) {
+  .tabla-movil thead {
+    @apply sr-only;
+  }
+  .tabla-movil tr {
+    @apply block border-t border-borde px-4 py-3 first:border-t-0;
+  }
+  .tabla-movil td {
+    @apply flex items-center justify-end gap-x-2 gap-y-1 border-0 px-0 py-1.5 text-right;
+  }
+  /* La etiqueta empuja el valor a la derecha y no hereda la negrita de la celda. */
+  .tabla-movil td::before {
+    content: attr(data-etiqueta);
+    @apply mr-auto shrink-0 pr-2 text-left text-xs font-normal text-gris;
+  }
+  .tabla-movil td:first-child {
+    @apply justify-start pb-2 text-left text-base;
+  }
+  .tabla-movil td:empty {
+    @apply hidden;
+  }
+  .tabla-movil td:first-child::before {
+    content: none;
+  }
+}
+
+@utility sin-barra {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ---------- Movimiento ----------
+   Cada animación tiene un propósito: confirmar una acción, mostrar de dónde viene algo
+   o evitar que el contenido aparezca de golpe. Con "reducir movimiento" se quitan los
+   desplazamientos y se conservan solo los fundidos. */
+
+/* Modales: el fondo se funde y la hoja sube. */
+@keyframes aparecer {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes subir {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+}
+@utility aparecer {
+  animation: aparecer 200ms var(--ease-out);
+}
+@utility subir {
+  animation: subir 280ms var(--ease-out);
+}
+
+/* Listas que llegan del servidor: entran escalonadas (40 ms entre elementos, máx. 12). */
+@keyframes entrar {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+}
+@utility entrar {
+  animation: entrar 360ms var(--ease-out) both;
+  animation-delay: calc(min(var(--i, 0), 12) * 40ms);
+}
+
+/* Punto del logotipo: cae y se asienta una sola vez por visita. */
+@keyframes punto-cae {
+  0% {
+    opacity: 0;
+    transform: translateY(-0.9em);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0.08em);
+  }
+  100% {
+    transform: none;
+  }
+}
+@utility punto-cae {
+  animation: punto-cae 620ms var(--ease-out) 200ms both;
+}
+
+/* Tarjetas flotantes del hero: entran y luego flotan muy despacio. */
+@keyframes flotar {
+  from {
+    transform: translateY(-6px) rotate(var(--giro, 0deg));
+  }
+  to {
+    transform: translateY(6px) rotate(calc(var(--giro, 0deg) * -0.4));
+  }
+}
+@keyframes hero-entra {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+}
+@utility flotante {
+  animation: hero-entra 700ms var(--ease-out) var(--retraso, 0ms) both;
+  & > * {
+    animation: flotar var(--periodo, 6s) ease-in-out var(--retraso, 0ms) infinite alternate;
+  }
+}
+
+/* Insignia del carrito: un pequeño salto al cambiar la cantidad. */
+@keyframes saltar {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: none;
+  }
+}
+@utility saltar {
+  animation: saltar 320ms var(--ease-out);
+}
+
+/* Trazo que se dibuja solo (check de compra exitosa, botón "agregado"). */
+@keyframes dibujar {
+  from {
+    stroke-dashoffset: var(--largo, 1);
+  }
+}
+@utility dibujar {
+  stroke-dasharray: var(--largo, 1);
+  stroke-dashoffset: 0;
+  animation: dibujar var(--dur, 500ms) var(--ease-out) var(--retraso, 0ms) both;
+}
+
+/* Skeleton de carga: pulso de opacidad, sin brillos ni degradados. */
+@keyframes latir {
+  50% {
+    opacity: 0.55;
+  }
+}
+@utility esqueleto {
+  @apply rounded-imagen bg-canvas;
+  animation: latir 1.4s ease-in-out infinite;
+}
+
+/* Transiciones entre páginas (View Transitions API): fundido corto de la página y
+   la imagen del producto viaja de la tarjeta a la página de detalle. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out);
+}
+::view-transition-group(*) {
+  animation-duration: 380ms;
+  animation-timing-function: var(--ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .entrar,
+  .flotante {
+    animation-name: aparecer;
+  }
+  .flotante > *,
+  .saltar,
+  .punto-cae,
+  .esqueleto {
+    animation: none;
+  }
+  .dibujar {
+    animation-name: aparecer;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none;
+  }
+  .btn,
+  .chip,
+  .tarjeta {
+    transition-property: color, background-color, border-color, box-shadow, opacity;
   }
 }

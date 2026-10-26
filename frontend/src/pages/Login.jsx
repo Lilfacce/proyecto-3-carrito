@@ -5,10 +5,10 @@ import { useAuth } from '../context/AuthContext.jsx'
 
 export function TarjetaFormulario({ titulo, subtitulo, children }) {
   return (
-    <div className="mx-auto max-w-md">
-      <div className="tarjeta p-6 sm:p-8">
-        <h1 className="text-2xl font-bold">{titulo}</h1>
-        <p className="mt-1 mb-6 text-sm text-slate-500">{subtitulo}</p>
+    <div className="mx-auto max-w-md pt-4 sm:pt-8">
+      <div className="tarjeta p-6 sm:p-10">
+        <h1 className="text-3xl font-semibold tracking-[-0.05em]">{titulo}</h1>
+        <p className="mt-2 mb-8 text-sm text-gris">{subtitulo}</p>
         {children}
       </div>
     </div>
@@ -54,7 +54,12 @@ export default function Login() {
           />
         </div>
         <div>
-          <label className="label" htmlFor="password">Contraseña</label>
+          <div className="flex items-baseline justify-between">
+            <label className="label" htmlFor="password">Contraseña</label>
+            <Link to="/recuperar" className="mb-1.5 text-xs text-gris underline-offset-2 hover:text-tinta hover:underline">
+              ¿La olvidaste?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"
@@ -70,7 +75,7 @@ export default function Login() {
         </button>
         <p className="text-center text-sm text-slate-500">
           ¿No tienes cuenta?{' '}
-          <Link to="/registro" state={location.state} className="font-semibold text-marca-600 hover:underline">
+          <Link to="/registro" state={location.state} className="font-medium text-tinta underline underline-offset-2">
             Regístrate
           </Link>
         </p>

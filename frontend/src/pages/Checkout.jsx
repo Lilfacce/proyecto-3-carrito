@@ -5,6 +5,7 @@ import { Alerta, Spinner } from '../components/ui.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { formatoQ } from '../format.js'
+import Icono from '../components/Iconos.jsx'
 
 // Formatea mientras se escribe: "4242424242424242" -> "4242 4242 4242 4242"
 const formatearNumero = (v) => v.replace(/\D/g, '').slice(0, 19).replace(/(\d{4})(?=\d)/g, '$1 ')
@@ -54,14 +55,14 @@ export default function Checkout() {
 
   return (
     <form onSubmit={confirmar} className="space-y-6">
-      <div>
-        <Link to="/carrito" className="btn-texto -ml-2">← Volver al carrito</Link>
-        <h1 className="text-2xl font-bold">Finalizar compra</h1>
+      <div className="space-y-2">
+        <Link to="/carrito" className="btn-texto -ml-3"><Icono nombre="flechaAtras" className="h-4 w-4" />Volver al carrito</Link>
+        <h1 className="text-3xl font-semibold tracking-[-0.05em]">Finalizar compra</h1>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
-          <section className="tarjeta space-y-3 p-5">
+          <section className="tarjeta space-y-3 p-6">
             <h2 className="font-semibold">1. Dirección de entrega</h2>
             <textarea
               className="input min-h-20"
@@ -74,7 +75,7 @@ export default function Checkout() {
             />
           </section>
 
-          <section className="tarjeta space-y-4 p-5">
+          <section className="tarjeta space-y-4 p-6">
             <h2 className="font-semibold">2. Método de pago</h2>
             <div className="grid gap-3 sm:grid-cols-2">
               {[
@@ -83,8 +84,8 @@ export default function Checkout() {
               ].map(([valor, titulo, desc]) => (
                 <label
                   key={valor}
-                  className={`flex cursor-pointer gap-3 rounded-lg border p-3 ${
-                    metodo === valor ? 'border-marca-500 bg-marca-50 ring-1 ring-marca-500' : 'border-slate-300'
+                  className={`flex cursor-pointer gap-3 rounded-2xl border p-3 ${
+                    metodo === valor ? 'border-tinta bg-canvas ring-1 ring-tinta' : 'border-borde'
                   }`}
                 >
                   <input type="radio" name="metodo" value={valor} checked={metodo === valor} onChange={() => setMetodo(valor)} className="mt-1 accent-marca-600" />
@@ -106,7 +107,7 @@ export default function Checkout() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className="label" htmlFor="numero">Número de tarjeta</label>
-                  <input id="numero" className="input font-mono" inputMode="numeric" autoComplete="off" required placeholder="0000 0000 0000 0000" {...campoTarjeta('numero', formatearNumero)} />
+                  <input id="numero" className="input tabular-nums tracking-wider" inputMode="numeric" autoComplete="off" required placeholder="0000 0000 0000 0000" {...campoTarjeta('numero', formatearNumero)} />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="label" htmlFor="titular">Nombre del titular</label>
@@ -114,21 +115,21 @@ export default function Checkout() {
                 </div>
                 <div>
                   <label className="label" htmlFor="vencimiento">Vencimiento (MM/AA)</label>
-                  <input id="vencimiento" className="input font-mono" inputMode="numeric" autoComplete="off" required placeholder="MM/AA" {...campoTarjeta('vencimiento', formatearVencimiento)} />
+                  <input id="vencimiento" className="input tabular-nums" inputMode="numeric" autoComplete="off" required placeholder="MM/AA" {...campoTarjeta('vencimiento', formatearVencimiento)} />
                 </div>
                 <div>
                   <label className="label" htmlFor="cvv">CVV</label>
-                  <input id="cvv" type="password" className="input font-mono" inputMode="numeric" autoComplete="off" required maxLength={4} placeholder="•••" {...campoTarjeta('cvv', (v) => v.replace(/\D/g, ''))} />
+                  <input id="cvv" type="password" className="input tabular-nums" inputMode="numeric" autoComplete="off" required maxLength={4} placeholder="•••" {...campoTarjeta('cvv', (v) => v.replace(/\D/g, ''))} />
                 </div>
                 <p className="flex items-center gap-1.5 text-xs text-slate-500 sm:col-span-2">
-                  🔒 Solo guardamos los últimos 4 dígitos. El número completo y el CVV nunca se almacenan.
+                  <Icono nombre="candado" className="h-4 w-4 shrink-0" /> Solo guardamos los últimos 4 dígitos. El número completo y el CVV nunca se almacenan.
                 </p>
               </div>
             )}
           </section>
         </div>
 
-        <aside className="tarjeta h-fit space-y-4 p-5 lg:sticky lg:top-24">
+        <aside className="tarjeta h-fit space-y-4 p-6 lg:sticky lg:top-24">
           <h2 className="font-semibold">Tu pedido ({unidades})</h2>
           <ul className="space-y-2 text-sm">
             {items.map((i) => (
@@ -140,7 +141,7 @@ export default function Checkout() {
               </li>
             ))}
           </ul>
-          <div className="flex justify-between border-t border-slate-100 pt-3 text-lg font-bold">
+          <div className="flex justify-between border-t border-borde pt-3 text-lg font-semibold">
             <span>Total</span>
             <span>{formatoQ(total)}</span>
           </div>
@@ -160,7 +161,7 @@ export default function Checkout() {
           <button className="btn-primario w-full py-3" disabled={enviando}>
             {enviando ? 'Procesando pago…' : `Confirmar compra · ${formatoQ(total)}`}
           </button>
-          <p className="text-center text-xs text-slate-400">El total final lo calcula el servidor con los precios vigentes.</p>
+          <p className="text-center text-xs text-gris">El total final lo calcula el servidor con los precios vigentes.</p>
         </aside>
       </div>
     </form>

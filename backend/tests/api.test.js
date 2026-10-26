@@ -21,6 +21,9 @@ const { crearApp } = await import('../src/app.js');
 const { pool } = await import('../src/db.js');
 const bcrypt = (await import('bcryptjs')).default;
 const jwt = (await import('jsonwebtoken')).default;
+const { buzonPruebas } = await import('../src/correo.js');
+const { CARPETA_IMAGENES } = await import('../src/routes/imagenes.js');
+const { rm } = await import('node:fs/promises');
 
 const app = crearApp();
 const TARJETA_OK = { numero: '4242424242424242', titular: 'Ana López', vencimiento: '12/30', cvv: '123' };
@@ -479,5 +482,126 @@ describe('seguridad', () => {
     const a = await agente('ana@test.com', 'Cliente123');
     assert.equal((await a.post('/api/auth/logout')).status, 204);
     assert.equal((await a.get('/api/auth/me')).status, 401);
+  });
+});
+
+describe('catálogo paginado', () => {
+  test('con limite devuelve una página, el total y sin repetir productos entre páginas', async () => {
+    for (let i = 1; i <= 5; i++) {
+      await admin.post('/api/productos').send({ nombre: `Pag ${i}`, precio: i, stock: 1, categoria: 'Paginación' });
+    }
+    const p1 = await request(app).get('/api/productos?categoria=Paginación&limite=2');
+    const p3 = await request(app).get('/api/productos?categoria=Paginación&limite=2&pagina=3');
+    assert.equal(p1.body.total, 5);
+    assert.equal(p1.body.paginas, 3);
+    assert.deepEqual(p1.body.productos.map((p) => p.nombre), ['Pag 1', 'Pag 2']);
+    assert.deepEqual(p3.body.productos.map((p) => p.nombre), ['Pag 5']);
+  });
+
+  test('sin limite sigue devolviendo todo (compatibilidad)', async () => {
+    const r = await request(app).get('/api/productos?categoria=Paginación');
+    assert.equal(r.body.productos.length, 5);
+    assert.equal((await request(app).get('/api/productos?limite=1000')).status, 400);
+  });
+});
+
+describe('fotos de productos', () => {
+  const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32)]);
+  const subidas = [];
+  after(() => Promise.all(subidas.map((url) => rm(`${CARPETA_IMAGENES}/${url.split('/').pop()}`, { force: true }))));
+
+  test('el admin sube una imagen, se sirve y se puede asignar a un producto', async () => {
+    const r = await admin.post('/api/admin/imagenes').set('Content-Type', 'image/png').send(PNG);
+    assert.equal(r.status, 201, JSON.stringify(r.body));
+    assert.match(r.body.url, /^\/uploads\/[a-f0-9]{32}\.png$/);
+    subidas.push(r.body.url);
+
+    const archivo = await request(app).get(r.body.url);
+    assert.equal(archivo.status, 200);
+    assert.equal(archivo.headers['content-type'], 'image/png');
+    assert.equal(archivo.headers['x-content-type-options'], 'nosniff');
+
+    const p = await admin.post('/api/productos').send({ nombre: 'Con foto', precio: 1, stock: 1, imagen: r.body.url });
+    assert.equal(p.status, 201);
+    assert.equal(p.body.producto.imagen, r.body.url);
+  });
+
+  test('rechaza archivos que no son imágenes aunque digan serlo', async () => {
+    const html = Buffer.from('<script>alert(1)</script>');
+    const r = await admin.post('/api/admin/imagenes').set('Content-Type', 'image/png').send(html);
+    assert.equal(r.status, 400);
+    const otraRuta = await admin.post('/api/productos').send({ nombre: 'Ruta rara', precio: 1, stock: 1, imagen: '/uploads/../.env' });
+    assert.equal(otraRuta.status, 400);
+  });
+
+  test('rechaza imágenes de más de 2 MB', async () => {
+    const grande = Buffer.concat([PNG, Buffer.alloc(2 * 1024 * 1024)]);
+    const r = await admin.post('/api/admin/imagenes').set('Content-Type', 'image/png').send(grande);
+    assert.equal(r.status, 413);
+  });
+
+  test('un cliente no puede subir imágenes', async () => {
+    const r = await cliente.post('/api/admin/imagenes').set('Content-Type', 'image/png').send(PNG);
+    assert.equal(r.status, 403);
+  });
+});
+
+describe('recuperar contraseña', () => {
+  const enlace = () => buzonPruebas.at(-1).texto.match(/token=([a-f0-9]{64})/)[1];
+  const esperarUnSegundo = () => new Promise((r) => setTimeout(r, 1100)); // las sesiones se comparan por segundo
+  let token;
+
+  test('envía un enlace solo si la cuenta existe, con la misma respuesta en ambos casos', async () => {
+    await request(app).post('/api/auth/registro').send({ nombre: 'Rita', email: 'rita@test.com', password: 'Antigua123' });
+    const antes = buzonPruebas.length;
+    const existe = await request(app).post('/api/auth/recuperar').send({ email: 'RITA@test.com' });
+    const noExiste = await request(app).post('/api/auth/recuperar').send({ email: 'nadie@test.com' });
+    assert.equal(existe.status, 200);
+    assert.deepEqual(existe.body, noExiste.body);
+    assert.equal(buzonPruebas.length, antes + 1);
+    assert.equal(buzonPruebas.at(-1).para, 'rita@test.com');
+    token = enlace();
+
+    // En la base solo queda el hash del token, nunca el token.
+    const { rows } = await pool.query('SELECT token_hash FROM recuperaciones_password');
+    assert.ok(rows.every((r) => r.token_hash !== token));
+  });
+
+  test('el enlace cambia la contraseña, cierra las sesiones abiertas y no se puede reutilizar', async () => {
+    const sesionVieja = await agente('rita@test.com', 'Antigua123');
+    await esperarUnSegundo();
+
+    const r = await request(app).post('/api/auth/restablecer').send({ token, password: 'Nueva12345' });
+    assert.equal(r.status, 204);
+    assert.equal((await sesionVieja.get('/api/auth/me')).status, 401);
+    const viejaClave = await request(app).post('/api/auth/login').send({ email: 'rita@test.com', password: 'Antigua123' });
+    assert.equal(viejaClave.status, 401);
+    await agente('rita@test.com', 'Nueva12345');
+
+    const otraVez = await request(app).post('/api/auth/restablecer').send({ token, password: 'Otra123456' });
+    assert.equal(otraVez.status, 400);
+  });
+
+  test('un enlace nuevo invalida el anterior y los vencidos no sirven', async () => {
+    await request(app).post('/api/auth/recuperar').send({ email: 'rita@test.com' });
+    const primero = enlace();
+    await request(app).post('/api/auth/recuperar').send({ email: 'rita@test.com' });
+    const segundo = enlace();
+    const conPrimero = await request(app).post('/api/auth/restablecer').send({ token: primero, password: 'Otra123456' });
+    assert.equal(conPrimero.status, 400);
+
+    await pool.query("UPDATE recuperaciones_password SET expira_en = NOW() - INTERVAL '1 minute' WHERE usado_en IS NULL");
+    const vencido = await request(app).post('/api/auth/restablecer').send({ token: segundo, password: 'Otra123456' });
+    assert.equal(vencido.status, 400);
+  });
+
+  test('cambiar la contraseña desde el perfil cierra otras sesiones pero mantiene la actual', async () => {
+    const otra = await agente('rita@test.com', 'Nueva12345');
+    const actual = await agente('rita@test.com', 'Nueva12345');
+    await esperarUnSegundo();
+    const r = await actual.put('/api/auth/me/password').send({ actual: 'Nueva12345', nueva: 'Perfil12345' });
+    assert.equal(r.status, 204);
+    assert.equal((await actual.get('/api/auth/me')).status, 200);
+    assert.equal((await otra.get('/api/auth/me')).status, 401);
   });
 });

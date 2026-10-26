@@ -3,12 +3,13 @@ import { Link } from 'react-router-dom'
 import { api } from '../../api.js'
 import { Alerta, EstadoBadge, Spinner } from '../../components/ui.jsx'
 import { formatoFecha, formatoQ } from '../../format.js'
+import Icono from '../../components/Iconos.jsx'
 
 function Indicador({ titulo, valor, detalle }) {
   return (
     <div className="tarjeta p-4 sm:p-5">
-      <p className="text-xs font-medium tracking-wide text-slate-500 uppercase">{titulo}</p>
-      <p className="mt-1 text-2xl font-bold sm:text-3xl">{valor}</p>
+      <p className="text-sm text-gris">{titulo}</p>
+      <p className="mt-1 text-2xl font-semibold tracking-[-0.04em] tabular-nums sm:text-3xl">{valor}</p>
       {detalle && <p className="mt-1 text-xs text-slate-500">{detalle}</p>}
     </div>
   )
@@ -26,7 +27,7 @@ function GraficoVentas({ datos }) {
           <div key={d.dia} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
             <span className="text-[10px] text-slate-500">{d.total > 0 ? formatoQ(d.total).replace('.00', '') : ''}</span>
             <div
-              className="w-full rounded-t-md bg-marca-500"
+              className="w-full rounded-t-lg bg-tinta transition hover:bg-violeta"
               style={{ height: `${Math.max((d.total / max) * 100, d.total > 0 ? 4 : 1)}%` }}
               title={`${d.dia}: ${formatoQ(d.total)}`}
             />
@@ -51,12 +52,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Resumen del negocio</h1>
+      <h1 className="text-3xl font-semibold tracking-[-0.05em]">Resumen del negocio</h1>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <Indicador titulo="Ventas totales" valor={formatoQ(d.ventas_total)} detalle={`Este mes: ${formatoQ(d.ventas_mes)}`} />
-        <Indicador titulo="Pedidos" valor={d.pedidos_total} detalle={`${d.pedidos_por_estado.pendiente} pendientes`} />
-        <Indicador titulo="Clientes" valor={d.clientes.total} detalle={`${d.clientes.activos} activos`} />
+        <Indicador titulo="Pedidos" valor={d.pedidos_total} detalle={`${d.pedidos_por_estado.pendiente} ${d.pedidos_por_estado.pendiente === 1 ? 'pendiente' : 'pendientes'}`} />
+        <Indicador titulo="Clientes" valor={d.clientes.total} detalle={`${d.clientes.activos} ${d.clientes.activos === 1 ? 'activo' : 'activos'}`} />
         <Indicador titulo="Stock bajo" valor={d.stock_bajo.length} detalle="productos por reabastecer" />
       </div>
 
@@ -84,7 +85,7 @@ export default function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="tarjeta p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-semibold">⚠️ Alertas de stock bajo</h2>
+            <h2 className="flex items-center gap-2 font-semibold"><Icono nombre="alerta" className="h-4 w-4 text-amber-700" />Alertas de stock bajo</h2>
             <Link to="/admin/inventario" className="btn-texto text-xs">Ir a inventario</Link>
           </div>
           {d.stock_bajo.length === 0 ? (
@@ -94,7 +95,7 @@ export default function Dashboard() {
               {d.stock_bajo.map((p) => (
                 <li key={p.id} className="flex justify-between py-2 text-sm">
                   <span>{p.nombre}</span>
-                  <span className={`font-semibold ${p.stock === 0 ? 'text-red-600' : 'text-amber-600'}`}>
+                  <span className={`font-semibold ${p.stock === 0 ? 'text-red-600' : 'text-amber-700'}`}>
                     {p.stock} / mín. {p.stock_minimo}
                   </span>
                 </li>
@@ -112,7 +113,7 @@ export default function Dashboard() {
               {d.productos_top.map((p, i) => (
                 <li key={p.producto_id} className="flex justify-between gap-2 py-2 text-sm">
                   <span>
-                    <span className="mr-2 text-slate-400">{i + 1}.</span>
+                    <span className="mr-2 text-gris">{i + 1}.</span>
                     {p.nombre_producto}
                   </span>
                   <span className="shrink-0 text-slate-600">
@@ -131,7 +132,7 @@ export default function Dashboard() {
           <Link to="/admin/pedidos" className="btn-texto text-xs">Ver todos</Link>
         </div>
         <div className="overflow-x-auto">
-          <table className="tabla w-full">
+          <table className="tabla tabla-movil w-full">
             <thead>
               <tr>
                 <th>#</th>
@@ -144,11 +145,11 @@ export default function Dashboard() {
             <tbody>
               {d.pedidos_recientes.map((p) => (
                 <tr key={p.id}>
-                  <td className="font-semibold">{p.id}</td>
-                  <td>{p.cliente_nombre}</td>
-                  <td className="whitespace-nowrap text-slate-500">{formatoFecha(p.fecha)}</td>
-                  <td><EstadoBadge estado={p.estado} /></td>
-                  <td className="text-right font-semibold">{formatoQ(p.total)}</td>
+                  <td data-etiqueta="Pedido" className="font-semibold">{p.id}</td>
+                  <td data-etiqueta="Cliente">{p.cliente_nombre}</td>
+                  <td data-etiqueta="Fecha" className="whitespace-nowrap text-slate-500">{formatoFecha(p.fecha)}</td>
+                  <td data-etiqueta="Estado"><EstadoBadge estado={p.estado} /></td>
+                  <td data-etiqueta="Total" className="text-right font-semibold">{formatoQ(p.total)}</td>
                 </tr>
               ))}
             </tbody>

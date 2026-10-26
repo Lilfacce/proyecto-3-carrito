@@ -16,7 +16,7 @@ export function CartProvider({ children }) {
   const listo = !esCliente || cargadoPara === usuario.id
 
   const recargar = useCallback(async () => {
-    if (!usuario || usuario.rol !== 'cliente') return setCarrito(VACIO)
+    if (!usuario || usuario.rol !== 'cliente') return
     setCargando(true)
     try {
       setCarrito(await api.carrito())
@@ -26,9 +26,20 @@ export function CartProvider({ children }) {
     }
   }, [usuario])
 
+  // Carga inicial al cambiar de usuario. Solo actualiza el estado cuando llega la respuesta.
+  const usuarioId = usuario?.id
   useEffect(() => {
-    recargar().catch(() => setCarrito(VACIO))
-  }, [recargar])
+    if (!esCliente) return
+    let vigente = true
+    api
+      .carrito()
+      .then((c) => vigente && setCarrito(c))
+      .catch(() => vigente && setCarrito(VACIO))
+      .finally(() => vigente && setCargadoPara(usuarioId))
+    return () => {
+      vigente = false
+    }
+  }, [esCliente, usuarioId])
 
   const acciones = useMemo(
     () => ({
@@ -41,8 +52,9 @@ export function CartProvider({ children }) {
   )
 
   const valor = useMemo(
-    () => ({ ...carrito, cargando, listo, recargar, ...acciones }),
-    [carrito, cargando, listo, recargar, acciones],
+    // Admins e invitados no tienen carrito: se deriva en lugar de vaciarlo con un efecto.
+    () => ({ ...(esCliente ? carrito : VACIO), cargando, listo, recargar, ...acciones }),
+    [carrito, esCliente, cargando, listo, recargar, acciones],
   )
   return <CartContext.Provider value={valor}>{children}</CartContext.Provider>
 }
