@@ -16,7 +16,7 @@ y **panel de administración** (resumen, productos, inventario, pedidos y usuari
 
 ## Requisitos
 
-- Node.js **20.19+ o 22.12+** (lo exige Vite 8; probado con Node 24.13)
+- Node.js **20.19+ o 22.12+** (lo exige Vite 8; probado con Node 24.21)
 - PostgreSQL 14 o superior (probado con PostgreSQL 18)
 
 ## Documentación

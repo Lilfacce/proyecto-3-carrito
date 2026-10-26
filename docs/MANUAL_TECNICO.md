@@ -6,6 +6,9 @@ Universidad Mesoamericana.
 Este manual está dirigido a quien instala, mantiene o evalúa el sistema. La guía para clientes y
 administradores está en el [Manual de usuario](MANUAL_USUARIO.md).
 
+**Versión:** 26/10/2026 — incluye el rediseño de la interfaz, las animaciones, la paginación, las fotos
+de productos, la recuperación de contraseña y las pruebas del frontend.
+
 ---
 
 ## 1. Análisis
@@ -28,7 +31,7 @@ productos, inventario, pedidos y clientes sin conocimientos técnicos.
 
 | ID | Requisito | Dónde se implementa |
 |---|---|---|
-| RF-01 | Ver catálogo con búsqueda, categorías y orden | `GET /api/productos`, `Catalogo.jsx` |
+| RF-01 | Ver catálogo con búsqueda, categorías, orden y paginación (“ver más”) | `GET /api/productos`, `Catalogo.jsx` |
 | RF-02 | Ver detalle de un producto | `GET /api/productos/:id`, `Producto.jsx` |
 | RF-03 | Registrarse e iniciar/cerrar sesión | `routes/auth.js`, `Registro.jsx`, `Login.jsx` |
 | RF-04 | Agregar productos al carrito | `POST /api/carrito` |
@@ -41,16 +44,21 @@ productos, inventario, pedidos y clientes sin conocimientos técnicos.
 | RF-11 | Dar seguimiento a pedidos (pendiente → enviado → entregado / cancelado) | `PATCH /api/pedidos/:id/estado`, `admin/Pedidos.jsx` |
 | RF-12 | Controlar usuarios y gestionar clientes (historial, activar/desactivar, roles) | `routes/admin.js`, `admin/Usuarios.jsx` |
 | RF-13 | Resumen del negocio (ventas, pedidos, stock bajo, más vendidos) | `GET /api/admin/dashboard`, `admin/Dashboard.jsx` |
+| RF-14 | Recuperar la contraseña con un enlace enviado por correo (simulado) | `POST /api/auth/recuperar`, `/restablecer`, `RecuperarPassword.jsx` |
+| RF-15 | Subir la foto de un producto desde el panel | `POST /api/admin/imagenes`, `SelectorImagen.jsx` |
 
 ### 1.4 Requisitos no funcionales
 
 | ID | Requisito | Cómo se cumple |
 |---|---|---|
-| RNF-01 | Interfaz sencilla e intuitiva | Flujo de compra en 3 pasos (catálogo → carrito → pago), mensajes de error en español, notificaciones |
+| RNF-01 | Interfaz sencilla e intuitiva | Flujo de compra en 3 pasos (catálogo → carrito → pago), mensajes de error en español, notificaciones; sistema visual único definido en `frontend/DESIGN.md` |
 | RNF-02 | Responsiva (computadora y móvil) | Tailwind CSS con diseño *mobile first*; verificado a 375 px y en escritorio |
 | RNF-03 | Seguridad de datos sensibles | Ver sección 6 |
 | RNF-04 | Consistencia del inventario | Compras en transacción con bloqueo de filas (`SELECT … FOR UPDATE`) |
-| RNF-05 | Control de versiones | Git |
+| RNF-05 | Control de versiones | Git y GitHub; los cambios entran a `main` por pull request |
+| RNF-06 | Accesibilidad | Contraste AA, foco visible, etiquetas en todos los campos, modales con foco atrapado y cierre con Escape, objetivos táctiles de 36 px o más |
+| RNF-07 | Movimiento con propósito | Animaciones cortas (≤ 360 ms en la interfaz) solo para confirmar acciones, orientar o evitar saltos; se reducen a fundidos con “reducir movimiento” |
+| RNF-08 | Calidad verificable | 50 pruebas automatizadas de la API y 25 de la interfaz; lint sin advertencias |
 
 ---
 
@@ -68,21 +76,27 @@ Aplicación de tres capas:
 └────────────────────┘ ◀───────────── └─────────────────────┘ ◀─────── └──────────────┘
 ```
 
-- En **desarrollo** corren dos servidores: Vite (`:5173`) y la API (`:3000`). Vite reenvía `/api` a la API,
-  así el navegador ve un solo origen y la cookie de sesión funciona sin CORS.
+- En **desarrollo** corren dos servidores: Vite (`:5173`) y la API (`:3000`). Vite reenvía `/api` y
+  `/uploads` a la API, así el navegador ve un solo origen y la cookie de sesión funciona sin CORS.
 - En la **demostración/producción** se compila el frontend (`frontend/dist`) y Express lo sirve junto con
   la API en el puerto 3000.
+- Las **fotos de productos** se guardan en disco (`backend/uploads/`) y Express las sirve en `/uploads`.
+  La base de datos solo guarda la ruta.
+- El **correo** es simulado (`src/correo.js`): el mensaje se imprime en la consola del backend. Para usar
+  un servidor real basta con reemplazar esa función.
 
 ### 2.2 Tecnologías
 
 | Capa | Tecnología | Motivo |
 |---|---|---|
 | Frontend | React 19, React Router 7, Vite 8, Tailwind CSS 4 | Componentes reutilizables, recarga rápida, estilos responsivos |
+| Diseño y movimiento | Inter, íconos SVG propios, CSS (`@keyframes`, transiciones), View Transitions API | Sin librerías de animación: las animaciones corren en CSS fuera del hilo principal |
 | Backend | Node.js, Express 5 | Mismo lenguaje en ambas capas; Express 5 captura errores de funciones `async` |
 | Validación | Zod | Esquemas declarativos; rechaza y descarta campos no esperados |
 | Base de datos | PostgreSQL | Transacciones ACID, bloqueos por fila, restricciones `CHECK` |
 | Seguridad | bcryptjs, jsonwebtoken, helmet, express-rate-limit | Hash de contraseñas, sesión firmada, cabeceras seguras, límite de intentos |
-| Pruebas | `node:test` + Supertest | Sin dependencias extra; pruebas de integración reales contra PostgreSQL |
+| Pruebas (API) | `node:test` + Supertest | Sin dependencias extra; pruebas de integración reales contra PostgreSQL |
+| Pruebas (interfaz) | Vitest + Testing Library + jsdom | Prueban componentes como los usa una persona (roles, textos, teclado) con la API simulada |
 
 ### 2.3 Estructura del código
 
@@ -121,24 +135,25 @@ proyecto-3/
 ### 2.4 Modelo de datos
 
 ```
-usuarios 1───* carrito_items *───1 productos
-    │                                  │
-    1                                  1
-    │                                  │
-    *                                  *
- pedidos 1───* detalle_pedido ─────────┘
-    │
-    1───1 pagos_simulados
+recuperaciones_password *───1 usuarios 1───* carrito_items *───1 productos
+                                   │                                  │
+                                   1                                  1
+                                   │                                  │
+                                   *                                  *
+                                pedidos 1───* detalle_pedido ─────────┘
+                                   │
+                                   1───1 pagos_simulados
 ```
 
 | Tabla | Campos principales | Reglas |
 |---|---|---|
-| `usuarios` | id, nombre, email (único), password_hash, rol, activo, telefono, direccion | `rol IN ('cliente','admin')` |
+| `usuarios` | id, nombre, email (único), password_hash, rol, activo, telefono, direccion, password_cambiado_en | `rol IN ('cliente','admin')` |
 | `productos` | id, nombre, descripcion, precio, stock, stock_minimo, imagen, categoria, activo | `precio >= 0`, `stock >= 0` |
 | `carrito_items` | usuario_id, producto_id, cantidad | PK compuesta; `cantidad > 0` |
 | `pedidos` | id, usuario_id, total, estado, direccion_entrega, fecha | `estado IN ('pendiente','enviado','entregado','cancelado')` |
 | `detalle_pedido` | pedido_id, producto_id, nombre_producto, cantidad, precio_unitario | Copia nombre y precio al momento de la compra |
 | `pagos_simulados` | pedido_id, metodo, marca, ultimos4, titular, monto, estado, referencia | **Nunca** guarda el número completo ni el CVV |
+| `recuperaciones_password` | usuario_id, token_hash (único), expira_en, usado_en | Solo el hash SHA-256 del token; se borra con el usuario |
 
 Decisiones de diseño:
 
@@ -171,7 +186,7 @@ las transiciones del diagrama; cualquier otro salto responde 400.
 
 ### 3.1 Requisitos
 
-- **Node.js 20.19+ o 22.12+** (lo exige Vite 8). Probado con Node 24.13.
+- **Node.js 20.19+ o 22.12+** (lo exige Vite 8). Probado con Node 24.21.
 - **PostgreSQL 14 o superior**. Probado con PostgreSQL 18.
 - Git (opcional, para clonar).
 
@@ -340,7 +355,32 @@ referencia `SIM-XXXXXXXXXXXX`. Solo devuelve marca, últimos 4 dígitos y titula
 
 El pago **contra entrega** se registra como `pendiente` y pasa a `aprobado` cuando el pedido se marca entregado.
 
-### 4.4 Frontend
+### 4.4 Recuperación de contraseña
+
+1. `POST /api/auth/recuperar` con el correo. Si pertenece a una cuenta activa, se genera un token aleatorio
+   de 256 bits, se guarda **solo su hash** con vencimiento de 30 minutos, se anulan los enlaces anteriores
+   sin usar y se “envía” el enlace `PUBLIC_URL/restablecer?token=…`. La respuesta es idéntica exista o no
+   la cuenta.
+2. La página `/restablecer` toma el token de la URL y pide la contraseña nueva (mismas reglas que el registro).
+3. `POST /api/auth/restablecer` marca el enlace como usado y cambia la contraseña **en la misma
+   transacción**, de modo que un enlace no sirve dos veces aunque llegue dos veces a la vez.
+4. Se guarda `password_cambiado_en` (truncado al segundo). `requireAuth` rechaza los JWT emitidos antes,
+   así se cierran las sesiones abiertas. Al cambiar la contraseña desde el perfil, la sesión actual se renueva.
+
+### 4.5 Fotos de productos
+
+1. En el formulario de producto, `SelectorImagen` envía el archivo tal cual (`Content-Type: image/…`) a
+   `POST /api/admin/imagenes`. Valida antes en el navegador el tipo y los 2 MB para responder rápido.
+2. El servidor acepta como máximo 2 MB (413 si se pasa) y decide el tipo por la **firma binaria** del
+   archivo (PNG, JPG o WebP), no por el encabezado ni la extensión.
+3. Guarda el archivo como `uploads/<32 hex aleatorios>.<ext>` y responde `{ url: "/uploads/…" }`.
+4. Al guardar el producto, `imagen` solo acepta `http(s)://…` o una ruta que coincida exactamente con
+   `/uploads/<hex>.<ext>`, así no se puede apuntar a otros archivos del servidor.
+
+> Las fotos viven fuera de la base de datos: al respaldar o mover el sistema hay que copiar también
+> `backend/uploads/`.
+
+### 4.6 Frontend
 
 - `AuthContext` consulta `/api/auth/me` al cargar para saber si hay sesión (el token no es accesible desde JavaScript).
 - `CartContext` mantiene el carrito sincronizado con el servidor; el contador del encabezado se actualiza al agregar.

@@ -5,7 +5,8 @@ Duración sugerida: **12–15 minutos**. Conviene ensayarlo completo al menos un
 ## Antes de presentar (10 minutos antes)
 
 1. Verificar que PostgreSQL esté corriendo.
-2. Dejar los datos limpios y la app compilada:
+2. Dejar los datos limpios y la app compilada (si la base ya existía de una versión anterior y no se
+   quiere borrar, basta con `npm run db:migrar` en lugar de `db:reset`):
    ```bash
    cd backend && npm run db:reset
    cd ../frontend && npm run build
@@ -39,7 +40,7 @@ Duración sugerida: **12–15 minutos**. Conviene ensayarlo completo al menos un
 | 7 | Checkout con `4242 4242 4242 4242` | Compra confirmada; solo se guardan marca y últimos 4 |
 | 8 | **Mis pedidos** → detalle | Línea de seguimiento del pedido |
 | 9 | Cerrar sesión → **¿La olvidaste?** → copiar el enlace de la terminal → nueva contraseña | Recuperación con enlace de un solo uso; solo se guarda su hash |
-| 10 | Reducir la ventana o usar el modo móvil del navegador (F12 → 📱) | Diseño responsivo; en el admin las tablas pasan a tarjetas |
+| 10 | Reducir la ventana o activar la vista de dispositivo del navegador (F12 → **Ctrl + Mayús + M**) | Diseño responsivo; en el admin las tablas pasan a tarjetas |
 
 ## 3. Vista del administrador (5 min)
 
