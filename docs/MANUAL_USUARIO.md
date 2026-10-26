@@ -27,6 +27,12 @@ botón de **dos líneas** de la esquina superior derecha.
 Sobre la imagen de cada producto aparece **¡Quedan N!** (5 unidades o menos) o **Agotado** (no se puede
 agregar). En el detalle, un punto verde indica cuántas unidades hay disponibles.
 
+![Página principal: buscador, categorías y productos destacados](capturas/catalogo.png)
+
+![Detalle de un producto](capturas/producto.png)
+
+![La tienda en el teléfono](capturas/movil-catalogo.png)
+
 ### 1.2 Crear una cuenta
 
 1. Toca **Crear cuenta** en el encabezado.
@@ -37,6 +43,8 @@ agregar). En el detalle, un punto verde indica cuántas unidades hay disponibles
 
 Si el correo ya está registrado, la tienda te lo indica; usa **Iniciar sesión** en su lugar.
 
+![Formulario de registro: los requisitos de la contraseña se marcan al escribir](capturas/registro.png)
+
 ### 1.3 Iniciar y cerrar sesión
 
 1. Toca **Iniciar sesión**, escribe tu correo y contraseña y confirma.
@@ -46,6 +54,8 @@ Si el correo ya está registrado, la tienda te lo indica; usa **Iniciar sesión*
 
 Por seguridad, la sesión vence sola después de 8 horas; solo tienes que volver a iniciarla. Después de
 muchos intentos fallidos seguidos, la tienda pide esperar unos minutos.
+
+![Iniciar sesión, con el enlace “¿La olvidaste?” junto a la contraseña](capturas/login.png)
 
 ### 1.3.1 Recuperar la contraseña
 
@@ -59,6 +69,8 @@ Si pides varios enlaces, solo el último funciona.
 
 > **En este proyecto el correo es simulado:** el mensaje con el enlace aparece en la consola (terminal)
 > donde corre el backend. Por seguridad, la tienda responde lo mismo exista o no la cuenta.
+
+![Pedir el enlace para restablecer la contraseña](capturas/recuperar.png)
 
 ### 1.4 Agregar productos al carrito
 
@@ -81,6 +93,8 @@ Toca el ícono del carrito en el encabezado para abrir **Tu carrito**. Ahí pued
 El **Resumen** muestra el número de productos, el envío (gratis) y el **Total**, que se recalcula con
 cada cambio. Si un producto se agotó mientras estaba en tu carrito, se marca para que ajustes la cantidad.
 
+![El carrito con su resumen](capturas/carrito.png)
+
 ### 1.6 Confirmar la compra
 
 1. En el carrito toca **Continuar con la compra**.
@@ -102,6 +116,10 @@ cada cambio. Si un producto se agotó mientras estaba en tu carrito, se marca pa
 Si mientras comprabas otra persona compró las últimas unidades, la tienda te avisa qué producto ya no
 alcanza y no realiza el cobro.
 
+![Finalizar compra con la tarjeta de prueba](capturas/checkout.png)
+
+![Confirmación de la compra y seguimiento del pedido](capturas/compra-exitosa.png)
+
 ### 1.7 Consultar mis pedidos
 
 1. Toca **Mis pedidos** en el encabezado.
@@ -114,6 +132,8 @@ alcanza y no realiza el cobro.
 | **Enviado** | El pedido va en camino |
 | **Entregado** | El pedido llegó |
 | **Cancelado** | El pedido se anuló y las unidades regresaron al inventario |
+
+![Lista de mis pedidos](capturas/mis-pedidos.png)
 
 ### 1.8 Cancelar un pedido
 
@@ -128,6 +148,8 @@ Toca tu nombre en el encabezado (o **Mi perfil** en el menú del teléfono) para
 - **Cambiar contraseña**: escribe la contraseña actual y la nueva, y toca **Actualizar contraseña**.
   Tu sesión actual sigue abierta, pero se cierran las de otros dispositivos.
 
+![Mi perfil: datos personales y cambio de contraseña](capturas/perfil.png)
+
 ---
 
 ## Parte 2. Administrador
@@ -140,6 +162,8 @@ En el teléfono, las tablas se muestran como tarjetas: cada fila es un bloque co
 la izquierda. Las listas largas de productos, pedidos y usuarios se muestran de 15 en 15; **Ver N más**
 carga las siguientes.
 
+![Panel de administración en el teléfono: cada fila de la tabla es una tarjeta](capturas/movil-admin-productos.png)
+
 ### 2.1 Resumen
 
 Muestra de un vistazo:
@@ -150,6 +174,8 @@ Muestra de un vistazo:
 - **Stock bajo**: productos en o por debajo de su mínimo.
 - Gráfica de **ventas de los últimos 7 días**, **pedidos por estado**, **alertas de stock bajo**
   (con acceso directo a Inventario), **productos más vendidos** y **pedidos recientes**.
+
+![Resumen del negocio](capturas/admin-resumen.png)
 
 ### 2.2 Productos
 
@@ -177,6 +203,10 @@ Muestra de un vistazo:
    de pedidos. Aparece como **Inactivo** en la lista.
 3. Para volver a publicarlo, toca **Editar**, marca **Visible en la tienda** y guarda.
 
+![Lista de productos](capturas/admin-productos.png)
+
+![Formulario de producto con la foto](capturas/admin-producto-formulario.png)
+
 ### 2.3 Inventario
 
 1. Revisa la tabla: stock actual, mínimo, nivel (**Normal**, **Stock bajo**, **Agotado**) y valor del inventario.
@@ -186,6 +216,8 @@ Muestra de un vistazo:
      (por ejemplo `25` al recibir mercadería o `-2` por productos dañados).
 3. La tienda no permite que el stock quede negativo.
 4. Activa **Mostrar solo productos con stock bajo** para ver qué hay que reabastecer.
+
+![Inventario con alertas de stock bajo y ajustes rápidos](capturas/admin-inventario.png)
 
 ### 2.4 Pedidos
 
@@ -199,6 +231,8 @@ Muestra de un vistazo:
 
 La tienda solo permite estos pasos en orden; por ejemplo, no se puede entregar un pedido sin enviarlo antes.
 
+![Detalle de un pedido con las acciones para avanzarlo](capturas/admin-pedido-detalle.png)
+
 ### 2.5 Usuarios y clientes
 
 1. Busca por nombre o correo y filtra con **Todos los roles**, **Clientes** o **Administradores**.
@@ -211,6 +245,8 @@ La tienda solo permite estos pasos en orden; por ejemplo, no se puede entregar u
    - **+ Nuevo usuario**: crea un cliente o un administrador con una **contraseña temporal**, que la
      persona puede cambiar después desde **Mi perfil**.
 5. No puedes desactivarte ni quitarte el rol a ti mismo (aparece marcado como **(tú)**).
+
+![Usuarios y clientes](capturas/admin-usuarios.png)
 
 ---
 
@@ -240,20 +276,6 @@ La tienda solo permite estos pasos en orden; por ejemplo, no se puede entregar u
 | ¿La tienda guarda mi tarjeta? | No. Solo guarda la marca y los últimos 4 dígitos como comprobante. |
 | “Tu cuenta está desactivada” | Un administrador desactivó la cuenta; contáctalo. |
 | “Demasiados intentos” | Espera 15 minutos antes de volver a intentar iniciar sesión. |
-
----
-
-## Parte 5. Qué significan las animaciones
-
-Las animaciones solo confirman algo o te orientan; no hace falta esperarlas para seguir.
-
-| Ves | Significa |
-|---|---|
-| El botón **+** gira y luego muestra un ✓ verde | El producto se agregó al carrito |
-| El ícono del carrito se sacude y su número salta | Cambió la cantidad de productos del carrito |
-| La foto de un producto “viaja” al abrirlo | Estás viendo el detalle del producto que tocaste |
-| Bloques grises que laten | La información se está cargando |
-| Un círculo y un ✓ que se dibujan | Tu compra se registró |
 
 ---
 
