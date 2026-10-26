@@ -68,13 +68,7 @@ productos, inventario, pedidos y clientes sin conocimientos técnicos.
 
 Aplicación de tres capas:
 
-```
-┌────────────────────┐   HTTP/JSON    ┌─────────────────────┐   SQL    ┌──────────────┐
-│  Navegador         │ ─────────────▶ │  API REST           │ ───────▶ │  PostgreSQL  │
-│  React 19 + Vite   │  cookie        │  Node.js + Express 5│  (pg)    │              │
-│  Tailwind CSS 4    │  httpOnly      │  Zod, JWT, bcrypt   │          │              │
-└────────────────────┘ ◀───────────── └─────────────────────┘ ◀─────── └──────────────┘
-```
+![Arquitectura de tres capas: navegador, API REST y PostgreSQL](diagramas/arquitectura.png)
 
 - En **desarrollo** corren dos servidores: Vite (`:5173`) y la API (`:3000`). Vite reenvía `/api` y
   `/uploads` a la API, así el navegador ve un solo origen y la cookie de sesión funciona sin CORS.
@@ -134,16 +128,7 @@ proyecto-3/
 
 ### 2.4 Modelo de datos
 
-```
-recuperaciones_password *───1 usuarios 1───* carrito_items *───1 productos
-                                   │                                  │
-                                   1                                  1
-                                   │                                  │
-                                   *                                  *
-                                pedidos 1───* detalle_pedido ─────────┘
-                                   │
-                                   1───1 pagos_simulados
-```
+![Modelo entidad-relación de las siete tablas](diagramas/modelo-datos.png)
 
 | Tabla | Campos principales | Reglas |
 |---|---|---|
@@ -171,11 +156,7 @@ de contraseña: los JWT emitidos antes de ese momento se rechazan, lo que cierra
 
 ### 2.5 Estados de un pedido
 
-```
-            ┌──────────▶ cancelado   (devuelve el stock)
-            │
-pendiente ──┴──▶ enviado ──▶ entregado (el pago contra entrega pasa a "aprobado")
-```
+![Diagrama de estados de un pedido](diagramas/estados-pedido.png)
 
 El cliente puede cancelar solo mientras el pedido está **pendiente**. El administrador solo puede hacer
 las transiciones del diagrama; cualquier otro salto responde 400.
@@ -340,6 +321,10 @@ Content-Type: application/json
 6. Inserta el pedido, su detalle, descuenta el stock, registra el pago (solo marca y últimos 4) y vacía el carrito.
 7. `COMMIT`. Si cualquier paso falla, `ROLLBACK`: nada cambia.
 
+![Pantalla de pago: el navegador solo envía método, dirección y tarjeta; el total lo calcula el servidor](capturas/checkout.png)
+
+![Resultado de una compra aprobada: pedido pendiente y comprobante con marca y últimos 4 dígitos](capturas/compra-exitosa.png)
+
 ### 4.3 Pasarela de pago simulada (`pago.js`)
 
 No se conecta a ningún banco. Valida el número con el algoritmo de Luhn, la fecha `MM/AA` (vigente hasta
@@ -367,6 +352,8 @@ El pago **contra entrega** se registra como `pendiente` y pasa a `aprobado` cuan
 4. Se guarda `password_cambiado_en` (truncado al segundo). `requireAuth` rechaza los JWT emitidos antes,
    así se cierran las sesiones abiertas. Al cambiar la contraseña desde el perfil, la sesión actual se renueva.
 
+![Paso 1 del flujo: pedir el enlace](capturas/recuperar.png)
+
 ### 4.5 Fotos de productos
 
 1. En el formulario de producto, `SelectorImagen` envía el archivo tal cual (`Content-Type: image/…`) a
@@ -379,6 +366,8 @@ El pago **contra entrega** se registra como `pendiente` y pasa a `aprobado` cuan
 
 > Las fotos viven fuera de la base de datos: al respaldar o mover el sistema hay que copiar también
 > `backend/uploads/`.
+
+![SelectorImagen dentro del formulario de producto](capturas/admin-producto-formulario.png)
 
 ### 4.6 Frontend
 
@@ -398,6 +387,12 @@ El pago **contra entrega** se registra como `pendiente` y pasa a `aprobado` cuan
   **+** y del ícono del carrito, check que se dibuja al terminar la compra, entrada de modales y avisos,
   y transición de la imagen de la tarjeta a la página del producto (View Transitions API). Con
   “reducir movimiento” activado en el sistema se eliminan los desplazamientos y quedan solo fundidos.
+
+![Catálogo en escritorio (1280 px): hero con productos flotantes, buscador y categorías](capturas/catalogo.png)
+
+![Panel de administración en escritorio](capturas/admin-resumen.png)
+
+![Catálogo en móvil (390 px)](capturas/movil-catalogo.png) ![Tablas del panel como tarjetas en móvil (clase tabla-movil)](capturas/movil-admin-productos.png)
 
 ---
 
